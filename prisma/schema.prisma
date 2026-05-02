@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String
+  workflow    String?
+  examples    String?
+  seoMetadata SeoMetadata?  @relation(fields: [seoId], references: [id])
+  seoId       String?       @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PortfolioProject {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  summary     String
+  gallery     String[]
+  tags        String[]
+  seoMetadata SeoMetadata?  @relation(fields: [seoId], references: [id])
+  seoId       String?       @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model BlogPost {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  content     String
+  category    String
+  seoMetadata SeoMetadata?  @relation(fields: [seoId], references: [id])
+  seoId       String?       @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ToolCategory {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  tools       StartupTool[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model StartupTool {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String        @unique
+  thumbnail      String?
+  screenshots    String[]
+  summary        String
+  description    String
+  benefits       String[]
+  includedFiles  String[]
+  instructions   String?
+  faqs           Json?
+  price          Float
+  categoryId     String
+  category       ToolCategory  @relation(fields: [categoryId], references: [id])
+  orderItems     OrderItem[]
+  seoMetadata    SeoMetadata?  @relation(fields: [seoId], references: [id])
+  seoId          String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  orderNo   String      @unique
+  customerId String
+  customer  Customer    @relation(fields: [customerId], references: [id])
+  items     OrderItem[]
+  payment   Payment?
+  total     Float
+  status    String      @default("PENDING") // PENDING, PAID, FAILED
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String      @id @default(cuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id])
+  toolId      String
+  tool        StartupTool @relation(fields: [toolId], references: [id])
+  price       Float
+  downloads   Download[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id])
+  amount        Float
+  status        String   // SUCCESS, FAILED
+  tapChargeId   String?  // Reference from Tap Payments
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Download {
+  id          String     @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem  @relation(fields: [orderItemId], references: [id])
+  token       String     @unique
+  accessedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  status    String   @default("UNREAD") // UNREAD, READ, REPLIED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SeoMetadata {
+  id               String            @id @default(cuid())
+  title            String
+  description      String
+  ogImage          String?
+  slug             String?
+  service          Service?
+  portfolioProject PortfolioProject?
+  blogPost         BlogPost?
+  startupTool      StartupTool?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
