@@ -1,0 +1,1 @@
+export default function ToolDetail({ params }: { params: { slug: string } }) { return <main className='p-8'><h1 className='text-3xl font-bold'>Tool: {params.slug}</h1></main> }
