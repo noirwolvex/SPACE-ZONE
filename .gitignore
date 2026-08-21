@@ -36,8 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# private book storage (never served publicly — access only via /api/books/[id]/access)
+/private-storage
+/public/books
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
 /lib/generated/prisma
+.vscode/.next/

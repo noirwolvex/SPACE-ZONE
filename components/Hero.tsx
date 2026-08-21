@@ -1,34 +1,49 @@
+"use client";
+
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-white dark:bg-gray-950 pt-24 pb-32 transition-colors">
-      <div className="container mx-auto px-4 text-center">
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50 mb-6">
-          Launch Your Digital Journey <br className="hidden md:block" />
-          <span className="text-blue-600 dark:text-blue-500">to the Next Orbit</span>
-        </h1>
-        <p className="mt-4 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
-          Space Zone Media is a premium corporate agency and digital tools marketplace designed to accelerate your startup's growth and online presence.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/services"
-            className="rounded-full bg-blue-600 px-8 py-3.5 text-lg font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition w-full sm:w-auto shadow-lg shadow-blue-500/30"
-          >
-            Explore Services
-          </Link>
-          <Link
-            href="/tools"
-            className="rounded-full border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-8 py-3.5 text-lg font-medium text-gray-900 dark:text-gray-100 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 transition w-full sm:w-auto"
-          >
-            Browse Startup Tools
-          </Link>
+    <section className="relative min-h-[90vh] w-full flex items-center overflow-hidden bg-gradient-to-br from-white via-sky-50 to-indigo-100 dark:from-[#050505] dark:via-[#0b1220] dark:to-[#111827] transition-colors">
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 relative z-10 pt-16">
+        
+        {/* Left Content */}
+        <div className="w-full max-w-4xl pt-12 lg:pt-0 text-left relative z-20">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-sm mb-6">
+            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm font-medium tracking-wide text-slate-700 dark:text-gray-300 uppercase">SpaceZone Agency</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-6xl tracking-tight lg:text-7xl font-extrabold text-slate-900 dark:text-white leading-[1.1] mb-6">
+            Launch Your <br className="hidden md:block" /> Digital Journey <br className="hidden md:block" /> 
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400">
+              to the Next Orbit
+            </span>
+          </h1>
+          
+          <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl max-w-xl font-light leading-relaxed mb-10">
+            SpaceZone is a premium digital agency helping brands, startups, and creators build powerful online experiences.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Link 
+              href="/portfolio" 
+              className="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(79,70,229,0.3)] dark:shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+            >
+              Enter SpaceZone
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            
+            <Link 
+              href="/services" 
+              className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-[#0a0f1e] text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-indigo-500/30 font-semibold rounded-full hover:bg-slate-50 dark:hover:bg-indigo-950/40 hover:border-slate-400 dark:hover:border-indigo-400/50 transition-all flex items-center justify-center"
+            >
+              Explore Services
+            </Link>
+          </div>
         </div>
       </div>
-      
-      {/* Background decoration */}
-      <div className="absolute top-0 -translate-y-12 -z-10 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-30 dark:opacity-20 rounded-[100%] bg-gradient-to-b from-blue-100 dark:from-blue-900 to-transparent blur-3xl pointer-events-none" />
     </section>
   );
 }

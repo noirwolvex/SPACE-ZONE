@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -16,13 +17,23 @@ model Admin {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  phone     String?
-  orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String            @id @default(cuid())
+  email          String            @unique
+  name           String?
+  phone          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  avatar         String?
+  role           String            @default("USER")
+  supabaseId     String?           @unique(where: raw("(\"supabaseId\" IS NOT NULL)"))
+  bio            String?
+  city           String?
+  country        String?
+  username       String?
+  orders         Order[]
+  bookOrders     BookOrder[]
+  purchasedBooks PurchasedBook[]
+  cartItems      ShoppingCartItem[]
 }
 
 model Service {
@@ -32,10 +43,10 @@ model Service {
   description String
   workflow    String?
   examples    String?
-  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
 model PortfolioProject {
@@ -45,10 +56,10 @@ model PortfolioProject {
   summary     String
   gallery     String[]
   tags        String[]
-  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
 model BlogPost {
@@ -57,19 +68,19 @@ model BlogPost {
   slug        String       @unique
   content     String
   category    String
-  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
 model ToolCategory {
   id        String        @id @default(cuid())
   name      String
   slug      String        @unique
-  tools     StartupTool[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+  tools     StartupTool[]
 }
 
 model StartupTool {
@@ -86,58 +97,76 @@ model StartupTool {
   faqs          Json?
   price         Float
   categoryId    String
-  category      ToolCategory @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  seoMetadata   SeoMetadata? @relation(fields: [seoId], references: [id])
   seoId         String?      @unique
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  orderItems    OrderItem[]
+  category      ToolCategory @relation(fields: [categoryId], references: [id])
+  seoMetadata   SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
 model Order {
   id         String      @id @default(cuid())
   orderNo    String      @unique
   customerId String
+  total      Float
+  status     String      @default("PENDING")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   customer   Customer    @relation(fields: [customerId], references: [id])
   items      OrderItem[]
   payment    Payment?
-  total      Float
-  status     String      @default("PENDING") // PENDING, PAID, FAILED
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+}
+
+model ShoppingCartItem {
+  id         String   @id @default(cuid())
+  customerId String
+  kind       String   @default("TOOL")
+  slug       String
+  name       String
+  category   String
+  priceLabel String
+  thumbnail  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@unique([customerId, kind, slug])
+  @@index([customerId])
 }
 
 model OrderItem {
   id        String      @id @default(cuid())
   orderId   String
-  order     Order       @relation(fields: [orderId], references: [id])
   toolId    String
-  tool      StartupTool @relation(fields: [toolId], references: [id])
   price     Float
-  downloads Download[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  downloads Download[]
+  order     Order       @relation(fields: [orderId], references: [id])
+  tool      StartupTool @relation(fields: [toolId], references: [id])
 }
 
 model Payment {
   id          String   @id @default(cuid())
   orderId     String   @unique
-  order       Order    @relation(fields: [orderId], references: [id])
   amount      Float
-  status      String // SUCCESS, FAILED
-  tapChargeId String? // Reference from Tap Payments
+  status      String
+  tapChargeId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  order       Order    @relation(fields: [orderId], references: [id])
 }
 
 model Download {
   id          String    @id @default(cuid())
   orderItemId String
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
   token       String    @unique
   accessedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
 }
 
 model ContactMessage {
@@ -146,7 +175,7 @@ model ContactMessage {
   email     String
   phone     String?
   message   String
-  status    String   @default("UNREAD") // UNREAD, READ, REPLIED
+  status    String   @default("UNREAD")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -157,12 +186,140 @@ model SeoMetadata {
   description      String
   ogImage          String?
   slug             String?
-  service          Service?
-  portfolioProject PortfolioProject?
-  blogPost         BlogPost?
-  startupTool      StartupTool?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  blogPost         BlogPost?
+  portfolioProject PortfolioProject?
+  service          Service?
+  startupTool      StartupTool?
+}
+
+model Book {
+  id          String          @id @default(cuid())
+  filename    String
+  path        String          @unique
+  size        Int
+  uploadedAt  DateTime        @default(now())
+  title       String?
+  author      String?
+  coverImage  String?
+  fileUrl     String?
+  /// Free-text age label shown in the UI, e.g. "4-11 years".
+  targetAge   String?
+  /// Normalized age bucket used for filtering: ALL_AGES | UNDER_6 | AGE_6_10 |
+  /// AGE_11_15 | AGE_16_18 | ADULTS. Null means unclassified.
+  ageGroup    String?
+  category    String?
+  summary     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  currency    String          @default("BHD")
+  isFree      Boolean         @default(false)
+  /// Null for free books; required and > 0 for paid books.
+  price       Decimal?
+  orders      BookOrder[]
+  purchases   PurchasedBook[]
+  images      BookImage[]
+
+  // Indexes backing the Books page filters and sorts.
+  @@index([category])
+  @@index([ageGroup])
+  @@index([isFree])
+  @@index([uploadedAt])
+}
+
+/// Preview gallery shown on the public book details page (5–7 images per book).
+/// Marketing previews only — the book PDF itself is never exposed here.
+model BookImage {
+  id        String   @id @default(cuid())
+  bookId    String
+  /// Provider-agnostic storage reference (e.g. supabase://book2/previews/x.jpg),
+  /// never a directly fetchable URL. Signed on read, like every other book asset.
+  imageUrl  String
+  /// Position in the gallery, ascending. Rewritten on every reorder.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId, sortOrder])
+}
+
+/// Ownership record. Created ONLY by a confirmed payment webhook or an explicit
+/// admin grant — never directly by a user-facing route.
+model PurchasedBook {
+  id          String   @id @default(cuid())
+  customerId  String
+  bookId      String
+  price       Decimal
+  currency    String
+  purchasedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  /// How ownership was granted: PAYMENT | ADMIN_GRANT
+  source      String   @default("PAYMENT")
+  /// Ownership state: COMPLETED | REFUNDED. Only COMPLETED grants file access.
+  status      String   @default("COMPLETED")
+  /// Payment-provider charge id that paid for this book (null for admin grants).
+  /// Denormalized from BookOrder.tapChargeId so a purchase is auditable alone.
+  transactionId String?
+  /// The paid order that produced this record, when granted via payment.
+  orderId     String?  @unique
+
+  customer    Customer   @relation(fields: [customerId], references: [id])
+  book        Book       @relation(fields: [bookId], references: [id])
+  order       BookOrder? @relation(fields: [orderId], references: [id])
+
+  // One ownership row per customer per book — the duplicate-purchase guard.
+  @@unique([customerId, bookId])
+  @@index([customerId, status])
+  @@index([transactionId])
+}
+
+/// A purchase intent for a single book. Created when the user clicks Buy, and
+/// promoted to PAID by the payment provider webhook, which then creates the
+/// matching PurchasedBook. Grants no access on its own.
+model BookOrder {
+  id          String    @id @default(cuid())
+  orderNo     String    @unique
+  customerId  String
+  bookId      String
+  amount      Decimal
+  currency    String
+  /// PENDING | PAID | FAILED | CANCELLED
+  status      String    @default("PENDING")
+  /// Payment provider identifier, e.g. TAP.
+  provider    String    @default("TAP")
+  /// Provider-side charge id, used for webhook idempotency.
+  tapChargeId String?   @unique
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  customer  Customer       @relation(fields: [customerId], references: [id])
+  book      Book           @relation(fields: [bookId], references: [id])
+  purchase  PurchasedBook?
+
+  @@index([customerId, bookId])
+  @@index([status])
+  // At most one OPEN order per customer per book, so double-clicking Buy cannot
+  // create competing payable orders. Partial: settled orders are unconstrained.
+  @@unique([customerId, bookId], where: raw("(status = 'PENDING')"), name: "BookOrder_pending_customer_book_key")
+}
+
+model Website {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  image       String?
+  summary     String?
+  price       Float
+  currency    String
+  category    String?
+  websiteUrl  String
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model NewsletterSubscriber {
@@ -171,4 +328,11 @@ model NewsletterSubscriber {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PageVisit {
+  id        String   @id @default(cuid())
+  path      String
+  userAgent String?
+  createdAt DateTime @default(now())
 }

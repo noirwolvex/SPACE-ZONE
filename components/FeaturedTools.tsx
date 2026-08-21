@@ -1,68 +1,53 @@
 import Link from "next/link";
+import Image from "next/image";
+import { getEditableStartupTools } from "@/lib/content-store";
 
-const tools = [
-  {
-    title: "Startup Launch Kit",
-    description: "A complete bundle of templates, legal docs, and financial models for early-stage startups.",
-    price: "$49",
-    category: "Bundle",
-    href: "/tools/startup-launch-kit"
-  },
-  {
-    title: "SEO Audit Pro",
-    description: "Automated technical and content SEO auditing tool designed for modern Next.js/React apps.",
-    price: "$29/mo",
-    category: "SaaS",
-    href: "/tools/seo-audit-pro"
-  },
-  {
-    title: "Social Media Automation",
-    description: "Schedule and auto-generate engaging content across platforms with AI.",
-    price: "$19/mo",
-    category: "SaaS",
-    href: "/tools/social-automation"
-  }
-];
+export default async function FeaturedTools() {
+  const startupTools = await getEditableStartupTools();
 
-export default function FeaturedTools() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 relative z-10 transition-colors">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
           <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Startup Tools Marketplace</h2>
-            <p className="mt-4 text-lg text-gray-600">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white drop-shadow-sm dark:drop-shadow-md sm:text-4xl">Startup Tools Marketplace</h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-300 drop-shadow-sm dark:drop-shadow">
               Premium digital tools and resources engineered to give your team a competitive edge.
             </p>
           </div>
-          <Link href="/tools" className="mt-4 md:mt-0 text-blue-600 font-medium hover:underline inline-flex items-center">
-            View all tools <span className="ml-1">→</span>
+          <Link href="/tools" className="mt-4 md:mt-0 text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors inline-flex items-center group">
+            View all tools <span className="ml-1 group-hover:translate-x-1 transition-transform">&rarr;</span>
           </Link>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {tools.map((tool, index) => (
-            <div key={index} className="flex flex-col border border-gray-200 rounded-2xl overflow-hidden hover:border-blue-300 transition">
-              <div className="bg-gray-100 h-48 w-full flex items-center justify-center">
-                <span className="text-gray-400">Image Placeholder</span>
+          {startupTools.map((tool) => (
+            <Link key={tool.slug} href={`/tools/${tool.slug}`} className="group flex flex-col bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-indigo-500/20 rounded-2xl overflow-hidden hover:border-indigo-400/50 hover:shadow-[0_0_25px_rgba(79,70,229,0.15)] dark:hover:shadow-[0_0_25px_rgba(79,70,229,0.2)] shadow-md dark:shadow-none transition duration-300">
+              <div className="relative h-48 w-full overflow-hidden border-b border-slate-200 bg-slate-100 dark:border-indigo-500/20 dark:bg-slate-800/50">
+                <Image
+                  src={tool.thumbnail}
+                  alt={`${tool.name} preview`}
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
               </div>
               <div className="p-6 flex flex-col flex-1">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md border border-indigo-200 dark:border-indigo-500/30">
                     {tool.category}
                   </span>
-                  <span className="font-bold text-gray-900">{tool.price}</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{tool.priceLabel}</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
-                <p className="text-gray-600 mb-6 flex-1">{tool.description}</p>
-                <Link
-                  href={tool.href}
-                  className="w-full text-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition"
+                <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">{tool.name}</h3>
+                <p className="text-slate-600 dark:text-slate-300 mb-6 flex-1">{tool.summary}</p>
+                <span
+                  className="w-full text-center rounded-lg bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 px-4 py-2.5 text-sm font-medium text-white transition shadow-[0_4px_15px_rgba(79,70,229,0.2)] dark:shadow-[0_0_15px_rgba(79,70,229,0.3)]"
                 >
                   View Details
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

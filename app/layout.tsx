@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import TrafficTracker from "@/components/TrafficTracker";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,16 +33,22 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col text-gray-900 bg-white dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col text-slate-900 bg-white dark:text-gray-100 dark:bg-[#050505] selection:bg-indigo-500/30 selection:text-indigo-900 dark:selection:text-white" suppressHydrationWarning>
+
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
-          enableSystem
+          enableSystem={true}
           disableTransitionOnChange
         >
-          <Navbar />
-          {children}
-          <Footer />
+          <AuthProvider>
+            <TrafficTracker />
+            <Navbar />
+            <main className="flex-grow z-10 relative">
+              {children}
+            </main>
+            <Footer />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

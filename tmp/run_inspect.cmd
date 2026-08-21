@@ -1,0 +1,1 @@
+"C:\Program Files\nodejs\node.exe" "C:\Users\User\Documents\SpaceZone\SpaceZone\tmp\inspect_db_columns.js"

@@ -1,26 +1,274 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #ffffff;
+    --foreground: #171717;
+}
+
+.dark {
+    --background: #0a0a0a;
+    --foreground: #ededed;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+     :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    /* Geist is loaded in app/layout.tsx; fall back only if the variable is absent. */
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+
+/* Hyper-Realistic Space Parallax Animations */
+
+@keyframes space-drift {
+    0% {
+        transform: scale(1.05) translate(0, 0);
+    }
+    100% {
+        transform: scale(1.15) translate(-1.5%, -1.5%);
+    }
+}
+
+@keyframes space-drift-reverse {
+    0% {
+        transform: scale(1.1) translate(-1%, -1%);
+    }
+    100% {
+        transform: scale(1) translate(0.5%, 0.5%);
+    }
+}
+
+@keyframes subtle-illuminate {
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
+
+/* ------------------------------------------------------------------------- */
+
+
+/* Motion primitives                                                          */
+
+
+/*                                                                            */
+
+
+/* Shared entrance/loading animations used across the storefront. Kept here    */
+
+
+/* rather than inline so timing and easing stay consistent everywhere.         */
+
+
+/* ------------------------------------------------------------------------- */
+
+
+/* One easing curve for the whole UI: fast out, gentle settle. */
+
+:root {
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes aurora-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(2%, -3%, 0) scale(1.08);
+    }
+}
+
+.animate-fade-up {
+    animation: fade-up 0.55s var(--ease-out-soft) both;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease both;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.4s var(--ease-out-soft) both;
+}
+
+
+/* Slow, ambient background glow behind hero sections. */
+
+.animate-aurora {
+    animation: aurora-float 18s ease-in-out infinite;
+}
+
+
+/**
+ * Staggered entrance for grids and lists. Children animate in sequence, so a
+ * page of cards resolves as a wave instead of a single flash.
+ */
+
+.stagger-children>* {
+    animation: fade-up 0.55s var(--ease-out-soft) both;
+}
+
+.stagger-children>*:nth-child(1) {
+    animation-delay: 0.03s;
+}
+
+.stagger-children>*:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
+.stagger-children>*:nth-child(3) {
+    animation-delay: 0.13s;
+}
+
+.stagger-children>*:nth-child(4) {
+    animation-delay: 0.18s;
+}
+
+.stagger-children>*:nth-child(5) {
+    animation-delay: 0.23s;
+}
+
+.stagger-children>*:nth-child(6) {
+    animation-delay: 0.28s;
+}
+
+.stagger-children>*:nth-child(7) {
+    animation-delay: 0.33s;
+}
+
+.stagger-children>*:nth-child(8) {
+    animation-delay: 0.38s;
+}
+
+.stagger-children>*:nth-child(n + 9) {
+    animation-delay: 0.42s;
+}
+
+
+/* Shimmer used by loading skeletons. */
+
+.skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.25), transparent);
+    animation: shimmer 1.8s infinite;
+}
+
+
+/* Diagonal light sweep across a book cover on hover. */
+
+.shine-on-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+    transform: translateX(-120%);
+    transition: transform 0.9s var(--ease-out-soft);
+    pointer-events: none;
+}
+
+.group:hover .shine-on-hover::before {
+    transform: translateX(120%);
+}
+
+
+/* Slim scrollbar for horizontal thumbnail rails. */
+
+.scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar {
+    height: 6px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.5);
+    border-radius: 9999px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background: rgb(99 102 241 / 0.7);
+}
+
+
+/* Respect the OS "reduce motion" setting across the entire app. */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

@@ -1,62 +1,52 @@
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, Code, Presentation, Rocket } from "lucide-react";
+import { ArrowRight, Code, ImageIcon, Presentation, Rocket, Sparkles } from "lucide-react";
+import { getEditableServices, type EditableService } from "@/lib/content-store";
 
-// Helper to map DB slugs/names to nice icons
-function getIconForService(slug: string) {
-  if (slug.includes('web')) return <Code className="w-8 h-8" />;
-  if (slug.includes('seo')) return <Rocket className="w-8 h-8" />;
+function ServiceIcon({ icon }: { icon: EditableService["icon"] }) {
+  if (icon === "code") return <Code className="w-8 h-8" />;
+  if (icon === "rocket") return <Rocket className="w-8 h-8" />;
+  if (icon === "image") return <ImageIcon className="w-8 h-8" />;
+  if (icon === "sparkles") return <Sparkles className="w-8 h-8" />;
   return <Presentation className="w-8 h-8" />;
 }
 
 export default async function ServicesPage() {
-  // Fetch services directly from the DB using Prisma
-  const services = await prisma.service.findMany({
-    orderBy: { createdAt: 'asc' }
-  });
+  const services = await getEditableServices();
 
   return (
-    <main className="flex-1 flex flex-col pt-24 pb-16 dark:bg-gray-950">
-      <div className="container mx-auto px-4 max-w-5xl">
+    <main className="flex-1 flex flex-col pt-24 pb-16 bg-slate-50 dark:bg-[#050505] min-h-[90vh] transition-colors">
+      <div className="container mx-auto px-4 max-w-5xl relative z-10">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm dark:drop-shadow-md">
             Our Services
           </h1>
-          <p className="mt-4 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="mt-4 text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto drop-shadow-sm dark:drop-shadow">
             Comprehensive digital solutions tailored for ambitious startups and forward-thinking enterprises.
           </p>
         </div>
 
-        {services.length === 0 ? (
-          <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-            <p className="text-gray-500 dark:text-gray-400 font-medium">No services found. Please run the database seeder.</p>
-          </div>
-        ) : (
-          <div className="grid gap-8 md:grid-cols-2">
-            {services.map((service) => (
-              <div 
-                key={service.id} 
-                className="group relative flex flex-col p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl hover:shadow-lg dark:hover:shadow-gray-900/50 hover:border-blue-100 dark:hover:border-blue-900/50 transition-all duration-300"
-              >
-                <div className="mb-6 inline-flex p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 w-fit">
-                  {getIconForService(service.slug)}
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                  {service.name}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-8 flex-1 leading-relaxed">
-                  {service.description}
-                </p>
-                <Link 
-                  href={`/services/${service.slug}`} 
-                  className="inline-flex items-center font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 group-hover:underline"
-                >
-                  Explore Service <ArrowRight className="ml-2 w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                </Link>
+        <div className="grid gap-8 md:grid-cols-2">
+          {services.map((service) => (
+            <Link
+              key={service.slug}
+              href={`/services/${service.slug}`}
+              className="group relative flex flex-col p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-indigo-500/20 rounded-2xl shadow-md dark:shadow-none hover:shadow-[0_0_25px_rgba(79,70,229,0.15)] dark:hover:shadow-[0_0_25px_rgba(79,70,229,0.2)] hover:border-indigo-400/50 dark:hover:bg-slate-800/60 transition-all duration-300"
+            >
+              <div className="mb-6 inline-flex p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/30 w-fit drop-shadow-sm dark:drop-shadow">
+                <ServiceIcon icon={service.icon} />
               </div>
-            ))}
-          </div>
-        )}
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 drop-shadow-sm">
+                {service.name}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 mb-8 flex-1 leading-relaxed">
+                {service.summary}
+              </p>
+              <span className="inline-flex items-center font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 group-hover:underline">
+                Explore Service <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </main>
   );
