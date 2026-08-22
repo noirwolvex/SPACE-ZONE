@@ -6,7 +6,6 @@ const protectedPaths = [
   "/library",
   "/purchased-books",
   "/purchased-websites",
-  "/admin",
 ];
 
 const authPages = ["/login", "/signup", "/forgot-password", "/verify-email", "/reset-password"];
@@ -56,9 +55,6 @@ export const config = {
     "/library/:path*",
     "/purchased-books/:path*",
     "/purchased-websites/:path*",
-    "/admin/:path*",
-    // Keeps the Supabase session fresh for book access checks. Authorization
-    // itself is enforced in the route handlers, not here.
     "/api/books/:path*",
     "/login",
     "/signup",
