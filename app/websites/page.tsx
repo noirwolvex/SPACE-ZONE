@@ -5,8 +5,23 @@ import { getWebsiteImageUrl } from "@/lib/website-storage";
 export const revalidate = 0;
 
 export default async function WebsitesPage() {
-  const sites = await prisma.website.findMany({ where: { isPublished: true }, orderBy: { createdAt: "desc" } });
-  const sitesWithImages = await Promise.all(sites.map(async (site) => ({ ...site, imageUrl: await getWebsiteImageUrl(site.image) })));
+  let sites: Awaited<ReturnType<typeof prisma.website.findMany>> = [];
+  let sitesWithImages: Array<(typeof sites)[number] & { imageUrl: string | null }> = [];
+
+  try {
+    sites = await prisma.website.findMany({
+      where: { isPublished: true },
+      orderBy: { createdAt: "desc" },
+    });
+    sitesWithImages = await Promise.all(
+      sites.map(async (site) => ({
+        ...site,
+        imageUrl: await getWebsiteImageUrl(site.image),
+      }))
+    );
+  } catch (error) {
+    console.error("Failed to load published websites:", error);
+  }
 
   const highlights = [
     { title: "Elegant storytelling", text: "Every experience is shaped to feel premium, calm, and easy to trust." },
