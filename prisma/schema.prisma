@@ -51,7 +51,7 @@ model Service {
 
 model PortfolioProject {
   id          String       @id @default(cuid())
-  title       String
+  title       String       @unique
   slug        String       @unique
   summary     String
   gallery     String[]
@@ -76,7 +76,7 @@ model BlogPost {
 
 model ToolCategory {
   id        String        @id @default(cuid())
-  name      String
+  name      String        @unique
   slug      String        @unique
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -85,7 +85,7 @@ model ToolCategory {
 
 model StartupTool {
   id            String       @id @default(cuid())
-  name          String
+  name          String       @unique
   slug          String       @unique
   thumbnail     String?
   screenshots   String[]
@@ -221,22 +221,17 @@ model Book {
   purchases   PurchasedBook[]
   images      BookImage[]
 
-  // Indexes backing the Books page filters and sorts.
   @@index([category])
   @@index([ageGroup])
   @@index([isFree])
   @@index([uploadedAt])
 }
 
-/// Preview gallery shown on the public book details page (5–7 images per book).
-/// Marketing previews only — the book PDF itself is never exposed here.
+/// Preview gallery shown on the public book details page.
 model BookImage {
   id        String   @id @default(cuid())
   bookId    String
-  /// Provider-agnostic storage reference (e.g. supabase://book2/previews/x.jpg),
-  /// never a directly fetchable URL. Signed on read, like every other book asset.
   imageUrl  String
-  /// Position in the gallery, ascending. Rewritten on every reorder.
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
@@ -245,40 +240,29 @@ model BookImage {
   @@index([bookId, sortOrder])
 }
 
-/// Ownership record. Created ONLY by a confirmed payment webhook or an explicit
-/// admin grant — never directly by a user-facing route.
 model PurchasedBook {
-  id          String   @id @default(cuid())
-  customerId  String
-  bookId      String
-  price       Decimal
-  currency    String
-  purchasedAt DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  /// How ownership was granted: PAYMENT | ADMIN_GRANT
-  source      String   @default("PAYMENT")
-  /// Ownership state: COMPLETED | REFUNDED. Only COMPLETED grants file access.
-  status      String   @default("COMPLETED")
-  /// Payment-provider charge id that paid for this book (null for admin grants).
-  /// Denormalized from BookOrder.tapChargeId so a purchase is auditable alone.
+  id            String   @id @default(cuid())
+  customerId    String
+  bookId        String
+  price         Decimal
+  currency      String
+  purchasedAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  source        String   @default("PAYMENT")
+  status        String   @default("COMPLETED")
   transactionId String?
-  /// The paid order that produced this record, when granted via payment.
-  orderId     String?  @unique
+  orderId       String?  @unique
 
-  customer    Customer   @relation(fields: [customerId], references: [id])
-  book        Book       @relation(fields: [bookId], references: [id])
-  order       BookOrder? @relation(fields: [orderId], references: [id])
+  customer Customer   @relation(fields: [customerId], references: [id])
+  book     Book       @relation(fields: [bookId], references: [id])
+  order    BookOrder? @relation(fields: [orderId], references: [id])
 
-  // One ownership row per customer per book — the duplicate-purchase guard.
   @@unique([customerId, bookId])
   @@index([customerId, status])
   @@index([transactionId])
 }
 
-/// A purchase intent for a single book. Created when the user clicks Buy, and
-/// promoted to PAID by the payment provider webhook, which then creates the
-/// matching PurchasedBook. Grants no access on its own.
 model BookOrder {
   id          String    @id @default(cuid())
   orderNo     String    @unique
@@ -286,24 +270,19 @@ model BookOrder {
   bookId      String
   amount      Decimal
   currency    String
-  /// PENDING | PAID | FAILED | CANCELLED
   status      String    @default("PENDING")
-  /// Payment provider identifier, e.g. TAP.
   provider    String    @default("TAP")
-  /// Provider-side charge id, used for webhook idempotency.
   tapChargeId String?   @unique
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  customer  Customer       @relation(fields: [customerId], references: [id])
-  book      Book           @relation(fields: [bookId], references: [id])
-  purchase  PurchasedBook?
+  customer Customer       @relation(fields: [customerId], references: [id])
+  book     Book           @relation(fields: [bookId], references: [id])
+  purchase PurchasedBook?
 
   @@index([customerId, bookId])
   @@index([status])
-  // At most one OPEN order per customer per book, so double-clicking Buy cannot
-  // create competing payable orders. Partial: settled orders are unconstrained.
   @@unique([customerId, bookId], where: raw("(status = 'PENDING')"), name: "BookOrder_pending_customer_book_key")
 }
 
@@ -312,14 +291,18 @@ model Website {
   title       String
   slug        String   @unique
   image       String?
+  gallery     String[] @default([])
   summary     String?
+  description String?
+  system      String?
+  details     String?
   price       Float
   currency    String
   category    String?
   websiteUrl  String
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  updatedAt   DateTime @default(now())
 }
 
 model NewsletterSubscriber {
