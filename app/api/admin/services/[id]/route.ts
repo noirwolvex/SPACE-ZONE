@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/admin-auth";
 import { slugify } from "@/lib/content-store";
 import { prisma } from "@/lib/prisma";
 
@@ -18,6 +17,7 @@ export async function PUT(request: NextRequest, { params }: RouteProps) {
     const name = String(body.name ?? "").trim();
     const summary = String(body.summary ?? "").trim();
     const image = String(body.image ?? "").trim() || null;
+    const bestFor = String(body.bestFor ?? "").trim();
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
@@ -32,6 +32,7 @@ export async function PUT(request: NextRequest, { params }: RouteProps) {
         description: summary,
         workflow: String(body.process ?? "").trim(),
         examples: String(body.deliverables ?? "").trim(),
+        bestFor: bestFor || null,
       },
     });
 
