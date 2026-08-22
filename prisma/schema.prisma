@@ -110,6 +110,7 @@ model StartupTool {
   description   String
   benefits      String[]
   includedFiles String[]
+  bestFor       String[]     @default([])
   instructions  String?
   faqs          Json?
   price         Float
@@ -330,7 +331,7 @@ model NewsletterSubscriber {
   email     String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 model PageVisit {
