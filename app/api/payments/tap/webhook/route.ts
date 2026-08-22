@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { fulfilBookOrder, markBookOrderFailed } from "@/lib/payments/book-orders";
 import { fulfilToolOrder, markToolOrderFailed } from "@/lib/payments/tool-orders";
 import { isTapConfigured, mapTapStatus, verifyTapWebhookSignature } from "@/lib/payments/tap";
