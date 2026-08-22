@@ -7,19 +7,39 @@ export default function AdminHashRouter() {
     const activateRequestedTab = () => {
       if (window.location.hash !== "#tools") return;
 
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const toolsButton = buttons.find(
+      const toolsButton = Array.from(document.querySelectorAll("button")).find(
         (button) => button.textContent?.trim() === "Startup Tools"
       );
 
       if (toolsButton instanceof HTMLButtonElement) {
         toolsButton.click();
+        return true;
       }
+
+      return false;
     };
 
-    activateRequestedTab();
-    window.addEventListener("hashchange", activateRequestedTab);
-    return () => window.removeEventListener("hashchange", activateRequestedTab);
+    let attempts = 0;
+    const activateWhenReady = () => {
+      if (activateRequestedTab()) return;
+      if (window.location.hash !== "#tools" || attempts++ >= 30) return;
+      window.setTimeout(activateWhenReady, 50);
+    };
+
+    activateWhenReady();
+    window.addEventListener("hashchange", activateWhenReady);
+
+    const observer = new MutationObserver(() => {
+      if (window.location.hash === "#tools") {
+        activateRequestedTab();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener("hashchange", activateWhenReady);
+      observer.disconnect();
+    };
   }, []);
 
   return null;
