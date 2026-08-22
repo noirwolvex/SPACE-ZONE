@@ -41,6 +41,11 @@ export default async function BooksPage({
         ageGroup: true,
         category: true,
         summary: true,
+        features: true,
+        targetAudience: true,
+        bookSize: true,
+        pageCount: true,
+        seriesParts: true,
         price: true,
         currency: true,
         isFree: true,
@@ -94,7 +99,6 @@ export default async function BooksPage({
       </div>
 
       <div className="relative mx-auto flex max-w-7xl flex-col gap-8">
-        {/* Hero ---------------------------------------------------------- */}
         <section className="animate-fade-up overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/80 shadow-[0_30px_90px_-45px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-indigo-500/20 dark:bg-slate-900/70">
           <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="p-8 sm:p-10 lg:p-12">
@@ -168,7 +172,6 @@ export default async function BooksPage({
           resultCount={booksWithAccess.length}
         />
 
-        {/* Grid ---------------------------------------------------------- */}
         {booksWithAccess.length === 0 ? (
           <div className="animate-fade-up flex flex-col items-center rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-14 text-center shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50">
             <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
