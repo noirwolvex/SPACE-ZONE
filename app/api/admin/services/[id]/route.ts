@@ -17,6 +17,7 @@ export async function PUT(request: NextRequest, { params }: RouteProps) {
     const body = await request.json();
     const name = String(body.name ?? "").trim();
     const summary = String(body.summary ?? "").trim();
+    const image = String(body.image ?? "").trim() || null;
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
@@ -33,6 +34,16 @@ export async function PUT(request: NextRequest, { params }: RouteProps) {
         examples: String(body.deliverables ?? "").trim(),
       },
     });
+
+    if (image) {
+      await prisma.$executeRaw`
+        INSERT INTO "ServiceMedia" ("serviceId", "imageUrl")
+        VALUES (${service.id}, ${image})
+        ON CONFLICT ("serviceId") DO UPDATE SET "imageUrl" = EXCLUDED."imageUrl", "updatedAt" = CURRENT_TIMESTAMP
+      `;
+    } else {
+      await prisma.$executeRaw`DELETE FROM "ServiceMedia" WHERE "serviceId" = ${service.id}`;
+    }
 
     revalidatePath("/");
     revalidatePath("/services");
