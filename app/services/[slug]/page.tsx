@@ -23,6 +23,13 @@ export default async function ServiceDetail({ params }: ServiceDetailProps) {
           Back to services
         </Link>
 
+        {service.image ? (
+          <div className="mb-10 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={service.image} alt={service.name} className="h-64 w-full object-cover sm:h-80 lg:h-[26rem]" />
+          </div>
+        ) : null}
+
         <section className="grid gap-10 lg:grid-cols-[1fr_0.72fr] lg:items-start">
           <div>
             <span className="inline-flex rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-900/30 dark:text-indigo-300">
@@ -59,9 +66,7 @@ export default async function ServiceDetail({ params }: ServiceDetailProps) {
 
         <section className="mt-14 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/40 dark:shadow-none md:p-8">
           <h2 className="text-2xl font-bold text-slate-950 dark:text-white">How we help</h2>
-          <p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">
-            {service.description}
-          </p>
+          <p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">{service.description}</p>
         </section>
 
         <section className="mt-8 grid gap-8 lg:grid-cols-2">
@@ -82,9 +87,7 @@ export default async function ServiceDetail({ params }: ServiceDetailProps) {
             <ol className="mt-5 space-y-3">
               {service.process.map((item, index) => (
                 <li key={item} className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-                    {index + 1}
-                  </span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">{index + 1}</span>
                   {item}
                 </li>
               ))}
