@@ -64,7 +64,7 @@ export async function getEditableServices(): Promise<EditableService[]> {
         image: imageByServiceId.get(record.id) ?? null,
         deliverables: linesToList(record.examples, fallback?.deliverables ?? ["Service deliverables"]),
         process: linesToList(record.workflow, fallback?.process ?? ["Plan the work", "Create the assets", "Prepare handoff"]),
-        bestFor: fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"],
+        bestFor: linesToList(record.bestFor, fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"]),
       };
     });
   } catch {
