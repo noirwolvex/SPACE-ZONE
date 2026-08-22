@@ -11,6 +11,7 @@ type AdminService = {
   image?: string | null;
   deliverables: string[];
   process: string[];
+  bestFor: string[];
 };
 
 type ServiceForm = {
@@ -19,6 +20,7 @@ type ServiceForm = {
   slug: string;
   summary: string;
   image: string;
+  bestFor: string;
   deliverables: string;
   process: string;
 };
@@ -29,6 +31,7 @@ const emptyForm: ServiceForm = {
   slug: "",
   summary: "",
   image: "",
+  bestFor: "",
   deliverables: "",
   process: "",
 };
@@ -81,6 +84,7 @@ export default function AdminServicesPage() {
       slug: service.slug,
       summary: service.summary,
       image: service.image ?? "",
+      bestFor: listToText(service.bestFor ?? []),
       deliverables: listToText(service.deliverables),
       process: listToText(service.process),
     });
@@ -177,16 +181,12 @@ export default function AdminServicesPage() {
             <label className="mt-5 block text-sm font-semibold">Name<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-indigo-500 dark:border-indigo-500/30 dark:bg-slate-950" /></label>
             <label className="mt-4 block text-sm font-semibold">Slug<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-from-name" className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-indigo-500 dark:border-indigo-500/30 dark:bg-slate-950" /></label>
             <label className="mt-4 block text-sm font-semibold">Summary<textarea required value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={4} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-indigo-500 dark:border-indigo-500/30 dark:bg-slate-950" /></label>
+            <label className="mt-4 block text-sm font-semibold">Best for, one per line<textarea value={form.bestFor} onChange={(e) => setForm({ ...form, bestFor: e.target.value })} rows={4} placeholder="Businesses\nFounders\nMarketing teams" className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-indigo-500 dark:border-indigo-500/30 dark:bg-slate-950" /></label>
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-indigo-500/20 dark:bg-slate-950/60">
               <p className="text-sm font-bold">Service Image</p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Recommended: landscape image suitable for a card banner.</p>
-              {form.image ? (
-                <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={form.image} alt="Service preview" className="h-44 w-full object-cover" />
-                </div>
-              ) : null}
+              {form.image ? <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"><img src={form.image} alt="Service preview" className="h-44 w-full object-cover" /></div> : null}
               <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 px-4 py-4 text-sm font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-950/30 dark:text-indigo-200">
                 {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                 {form.image ? "Replace image" : "Choose image"}
@@ -206,14 +206,12 @@ export default function AdminServicesPage() {
               {services.map((service) => (
                 <article key={service.id ?? service.slug} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
                   <div className="h-32 bg-gradient-to-br from-indigo-100 to-slate-100 dark:from-indigo-950/60 dark:to-slate-950">
-                    {service.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={service.image} alt={service.name} className="h-full w-full object-cover" />
-                    ) : <div className="flex h-full items-center justify-center text-xs font-bold uppercase tracking-wider text-slate-400">No image</div>}
+                    {service.image ? <img src={service.image} alt={service.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs font-bold uppercase tracking-wider text-slate-400">No image</div>}
                   </div>
                   <div className="p-4">
                     <p className="font-bold">{service.name}</p>
                     <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{service.summary}</p>
+                    {service.bestFor?.length ? <p className="mt-2 text-xs text-slate-500">Best for: {service.bestFor.join(", ")}</p> : null}
                     <div className="mt-4 flex gap-2"><button type="button" onClick={() => edit(service)} className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-500">Edit</button><button type="button" onClick={() => void remove(service)} className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-500"><Trash2 className="h-4 w-4" /></button></div>
                   </div>
                 </article>
