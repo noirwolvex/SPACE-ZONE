@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminHashRouter from "./AdminHashRouter";
 
 /**
  * Admin is rendered as a client-authenticated workspace. Authorization for all
@@ -17,6 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <>
+      <AdminHashRouter />
       <nav className="border-b border-slate-200 bg-white px-4 py-3 dark:border-indigo-500/20 dark:bg-[#080b14]">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
           {links.map(([label, href], index) => (
