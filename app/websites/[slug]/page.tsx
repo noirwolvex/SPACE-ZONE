@@ -50,7 +50,7 @@ export default async function WebsiteDetailsPage({ params }: Props) {
                   <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">System</p>
                   <p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.system ?? "Custom website system"}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-950 dark:bg-slate-950/60">
                   <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Price</p>
                   <p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.currency} {site.price}</p>
                 </div>
@@ -65,14 +65,18 @@ export default async function WebsiteDetailsPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8">
+        <section className="mt-6 grid gap-6">
+          <article className="min-h-64 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">Description</p>
-            <p className="mt-4 whitespace-pre-line text-base leading-8 text-slate-600 dark:text-slate-300">{site.description ?? site.summary ?? "No additional description has been added yet."}</p>
+            <div className="mt-4 min-h-64 whitespace-pre-line text-base leading-8 text-slate-600 dark:text-slate-300">
+              {site.description ?? site.summary ?? "No additional description has been added yet."}
+            </div>
           </article>
-          <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8">
+          <article className="min-h-64 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">Details</p>
-            <p className="mt-4 whitespace-pre-line text-base leading-8 text-slate-600 dark:text-slate-300">{site.details ?? "Project details will appear here."}</p>
+            <div className="mt-4 min-h-64 whitespace-pre-line text-base leading-8 text-slate-600 dark:text-slate-300">
+              {site.details ?? "Project details will appear here."}
+            </div>
           </article>
         </section>
       </div>
