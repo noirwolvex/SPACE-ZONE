@@ -1,5 +1,8 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  runtime         = "workerd"
+  moduleFormat    = "esm"
   previewFeatures = ["partialIndexes"]
 }
 
@@ -75,7 +78,7 @@ model BlogPost {
   category    String
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  updatedAt   DateTime @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -89,9 +92,9 @@ model ToolCategory {
 }
 
 model StartupTool {
-  id            String       @id @default(cuid())
-  name          String       @unique
-  slug          String       @unique
+  id            String        @id @default(cuid())
+  name          String        @unique
+  slug          String        @unique
   thumbnail     String?
   screenshots   String[]
   summary       String
@@ -102,12 +105,12 @@ model StartupTool {
   faqs          Json?
   price         Float
   categoryId    String
-  seoId         String?      @unique
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  seoId         String?       @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   orderItems    OrderItem[]
-  category      ToolCategory @relation(fields: [categoryId], references: [id])
-  seoMetadata   SeoMetadata? @relation(fields: [seoId], references: [id])
+  category      ToolCategory  @relation(fields: [categoryId], references: [id])
+  seoMetadata   SeoMetadata?  @relation(fields: [seoId], references: [id])
 }
 
 model Order {
@@ -142,15 +145,15 @@ model ShoppingCartItem {
 }
 
 model OrderItem {
-  id        String      @id @default(cuid())
-  orderId   String
-  toolId    String
-  price     Float
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  downloads Download[]
-  order     Order       @relation(fields: [orderId], references: [id])
-  tool      StartupTool @relation(fields: [toolId], references: [id])
+  id         String      @id @default(cuid())
+  orderId    String
+  toolId     String
+  price      Float
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  downloads  Download[]
+  order      Order       @relation(fields: [orderId], references: [id])
+  tool       StartupTool @relation(fields: [toolId], references: [id])
 }
 
 model Payment {
@@ -208,10 +211,7 @@ model Book {
   title          String?
   author         String?
   coverImage     String?
-  /// Free-text age label shown in the UI, e.g. "4-11 years".
   targetAge      String?
-  /// Normalized age bucket used for filtering: ALL_AGES | UNDER_6 | AGE_6_10 |
-  /// AGE_11_15 | AGE_16_18 | ADULTS. Null means unclassified.
   ageGroup       String?
   category       String?
   summary        String?
@@ -224,7 +224,6 @@ model Book {
   updatedAt      DateTime        @updatedAt
   currency       String          @default("BHD")
   isFree         Boolean         @default(false)
-  /// Null for free books; required and > 0 for paid books.
   price          Decimal?
   orders         BookOrder[]
   purchases      PurchasedBook[]
