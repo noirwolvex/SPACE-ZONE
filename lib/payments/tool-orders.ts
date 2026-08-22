@@ -5,6 +5,8 @@ export function generateToolOrderNo() {
   return `TOOL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
+const TOOL_CURRENCY = "BHD";
+
 export async function createPendingToolOrder(params: {
   customerId: string;
   items: Array<{ toolId: string; price: number; quantity?: number }>;
@@ -12,6 +14,11 @@ export async function createPendingToolOrder(params: {
 }) {
   if (!params.items.length) {
     throw new Error("Tool order requires at least one item.");
+  }
+
+  const requestedCurrency = (params.currency ?? TOOL_CURRENCY).toUpperCase();
+  if (requestedCurrency !== TOOL_CURRENCY) {
+    throw new Error(`Unsupported tool order currency: ${requestedCurrency}`);
   }
 
   const total = params.items.reduce((sum, item) => sum + Number(item.price) * (item.quantity ?? 1), 0);
@@ -82,7 +89,7 @@ export async function fulfilToolOrder(params: {
       }
 
       const total = Number(order.total);
-      const currency = (params.paidCurrency ?? "BHD").toUpperCase();
+      const paidCurrency = (params.paidCurrency ?? "").toUpperCase();
 
       if (params.paidAmount == null) {
         return { ok: false, error: "Payment amount could not be verified.", reason: "REJECTED" };
@@ -90,6 +97,10 @@ export async function fulfilToolOrder(params: {
 
       if (Number(params.paidAmount) !== total) {
         return { ok: false, error: "Paid amount does not match the order.", reason: "REJECTED" };
+      }
+
+      if (paidCurrency !== TOOL_CURRENCY) {
+        return { ok: false, error: "Paid currency does not match the tool order.", reason: "REJECTED" };
       }
 
       await tx.order.update({
