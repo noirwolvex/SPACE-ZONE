@@ -272,3 +272,9 @@ body {
         scroll-behavior: auto !important;
     }
 }
+
+/* Hide the duplicate Admin Dashboard content switcher. The main Admin layout
+   is the single navigation surface for the admin sections. */
+main > div.mx-auto.max-w-7xl > div.mt-8.flex.gap-3.flex-wrap {
+    display: none;
+}
