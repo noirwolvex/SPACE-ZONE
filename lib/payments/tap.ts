@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from "crypto";
  *
  * Required environment variables:
  *   TAP_SECRET_KEY       server-side API key (sk_test_… / sk_live_…)
- *   TAP_WEBHOOK_SECRET   shared secret used to sign webhook payloads
+ *   TAP_WEBHOOK_SECRET   optional legacy/shared webhook secret
  */
 
 export const TAP_SECRET_KEY = process.env.TAP_SECRET_KEY ?? "";
@@ -41,6 +41,13 @@ function splitCustomerName(name: string | null, email: string | null) {
   const source = (name ?? email?.split("@")[0] ?? "Customer").trim();
   const [first, ...rest] = source.split(/\s+/);
   return { first: first || "Customer", last: rest.join(" ") || "-" };
+}
+
+/** Format amounts using Tap's currency-specific decimal precision. */
+function formatTapAmount(amount: number, currency: string) {
+  const normalized = currency.toUpperCase();
+  const decimals = ["BHD", "KWD", "OMR", "JOD"].includes(normalized) ? 3 : 2;
+  return amount.toFixed(decimals);
 }
 
 /**
@@ -115,21 +122,68 @@ export async function createTapCharge(request: TapChargeRequest): Promise<TapCha
   }
 }
 
+function valueAtPath(root: Record<string, unknown>, path: string) {
+  let current: unknown = root;
+  for (const key of path.split(".")) {
+    if (!current || typeof current !== "object") return "";
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current == null ? "" : String(current);
+}
+
+function formatTapCreated(value: unknown) {
+  if (typeof value === "number" || (typeof value === "string" && /^\d+$/.test(value))) {
+    return String(value);
+  }
+  if (typeof value === "string") return value;
+  return "";
+}
+
 /**
- * Verify a webhook signature using a constant-time comparison.
- * Returns false when no secret is configured, so unsigned calls are never trusted.
+ * Verify Tap's webhook hashstring.
+ *
+ * Tap documents HMAC-SHA256 over the posted charge fields using the merchant's
+ * Secret API Key. For charge/authorize webhooks the fields are id, amount,
+ * currency, gateway_reference, payment_reference, status and created.
  */
-export function verifyTapWebhookSignature(rawBody: string, signature: string | null) {
-  if (!TAP_WEBHOOK_SECRET || !signature) return false;
+export function verifyTapWebhookSignature(
+  payload: Record<string, unknown>,
+  signature: string | null,
+) {
+  const received = signature?.trim().toLowerCase();
+  if (!received || !TAP_SECRET_KEY) return false;
 
-  const expected = createHmac("sha256", TAP_WEBHOOK_SECRET).update(rawBody, "utf8").digest("hex");
-  const received = signature.trim().toLowerCase();
+  const id = valueAtPath(payload, "id");
+  const amountRaw = valueAtPath(payload, "amount");
+  const currency = valueAtPath(payload, "currency").toUpperCase();
+  const gatewayReference = valueAtPath(payload, "reference.gateway");
+  const paymentReference = valueAtPath(payload, "reference.payment");
+  const status = valueAtPath(payload, "status");
+  const created = formatTapCreated(
+    (payload.transaction as Record<string, unknown> | undefined)?.created ?? payload.created,
+  );
 
+  if (!id || !amountRaw || !currency || !status || !created) return false;
+
+  const numericAmount = Number(amountRaw);
+  const amount = Number.isFinite(numericAmount)
+    ? formatTapAmount(numericAmount, currency)
+    : amountRaw;
+
+  const toBeHashed =
+    `x_id${id}` +
+    `x_amount${amount}` +
+    `x_currency${currency}` +
+    `x_gateway_reference${gatewayReference}` +
+    `x_payment_reference${paymentReference}` +
+    `x_status${status}` +
+    `x_created${created}`;
+
+  const expected = createHmac("sha256", TAP_SECRET_KEY).update(toBeHashed, "utf8").digest("hex");
   const expectedBuffer = Buffer.from(expected, "utf8");
   const receivedBuffer = Buffer.from(received, "utf8");
 
   if (expectedBuffer.length !== receivedBuffer.length) return false;
-
   return timingSafeEqual(expectedBuffer, receivedBuffer);
 }
 
