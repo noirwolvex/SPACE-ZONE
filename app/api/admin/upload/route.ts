@@ -5,12 +5,16 @@ import { IMAGE_EXTENSIONS, MAX_IMAGE_SIZE_BYTES, uploadMediaImage } from "@/lib/
 
 export const runtime = "nodejs";
 
+const ALLOWED_DIRECTORIES = new Set(["tools", "services"]);
+
 export async function POST(request: NextRequest) {
   const admin = await requireAdmin(request);
   if (!admin.ok) return admin.response;
 
   const formData = await request.formData();
   const file = formData.get("file");
+  const requestedDirectory = String(formData.get("directory") ?? "tools").trim().toLowerCase();
+  const directory = ALLOWED_DIRECTORIES.has(requestedDirectory) ? requestedDirectory : "tools";
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Image file is required." }, { status: 400 });
@@ -27,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const filename = `${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await file.arrayBuffer());
-  const upload = await uploadMediaImage(filename, bytes, file.type);
+  const upload = await uploadMediaImage(filename, bytes, file.type, directory);
 
   return NextResponse.json({ path: upload.path, storageMode: upload.storageMode });
 }
