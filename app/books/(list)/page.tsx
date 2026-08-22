@@ -13,6 +13,31 @@ import {
   type RawSearchParams,
 } from "@/lib/book-filters";
 import type { BookWithAccess } from "@/lib/book-types";
+import type { Prisma } from "@/lib/generated/prisma/client";
+
+const BOOK_LIST_SELECT = {
+  id: true,
+  filename: true,
+  size: true,
+  uploadedAt: true,
+  coverImage: true,
+  title: true,
+  author: true,
+  targetAge: true,
+  ageGroup: true,
+  category: true,
+  summary: true,
+  features: true,
+  targetAudience: true,
+  bookSize: true,
+  pageCount: true,
+  seriesParts: true,
+  price: true,
+  currency: true,
+  isFree: true,
+} as const satisfies Prisma.BookSelect;
+
+type BookListItem = Prisma.BookGetPayload<{ select: typeof BOOK_LIST_SELECT }>;
 
 export const revalidate = 0;
 
@@ -25,32 +50,14 @@ export default async function BooksPage({
 
   // Keep the primary catalogue query isolated. Optional analytics, auth, and
   // cover signing must never take the whole books page down.
-  let books: Awaited<ReturnType<typeof prisma.book.findMany>> = [] as never;
+  let books: BookListItem[] = [];
   try {
     books = await prisma.book.findMany({
       where: buildBookWhere(filters),
       orderBy: buildBookOrderBy(filters.sort),
-      select: {
-        id: true,
-        filename: true,
-        size: true,
-        uploadedAt: true,
-        coverImage: true,
-        title: true,
-        author: true,
-        targetAge: true,
-        ageGroup: true,
-        category: true,
-        summary: true,
-        features: true,
-        targetAudience: true,
-        bookSize: true,
-        pageCount: true,
-        seriesParts: true,
-        price: true,
-        currency: true,
-        isFree: true,
-      },
+      // `path` is deliberately NOT selected: the PDF location must never be
+      // serialized into the page sent to the browser.
+      select: BOOK_LIST_SELECT,
     });
   } catch (error) {
     console.error("Failed to load books:", error);
