@@ -87,15 +87,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json", "x-access-token": data.session.access_token },
         body: JSON.stringify({ fullName: data.user?.user_metadata?.full_name ?? data.user?.email?.split("@")[0] ?? "User", email: data.user?.email }),
       });
+
+      // Force the Supabase browser client to finish persisting the session before
+      // the next protected-route request is made. A full navigation also gives
+      // Next.js/Cloudflare middleware a fresh request containing the session.
+      await supabase.auth.getSession();
+      await new Promise((resolve) => setTimeout(resolve, 75));
+
       if (data.user?.email_confirmed_at) {
-        router.replace(options?.redirectTo ?? "/");
+        window.location.assign(options?.redirectTo ?? "/");
       } else {
-        router.replace("/verify-email");
+        window.location.assign("/verify-email");
       }
     }
 
     return {};
-  }, [router]);
+  }, []);
 
   const signUp = useCallback(async (fullName: string, email: string, password: string, options?: { redirectTo?: string }) => {
     const response = await fetch("/api/auth/signup", {
