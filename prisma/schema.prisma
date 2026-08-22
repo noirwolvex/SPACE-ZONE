@@ -51,19 +51,19 @@ model Service {
 }
 
 model PortfolioProject {
-  id          String   @id @default(cuid())
-  title       String   @unique
-  slug        String   @unique
+  id          String       @id @default(cuid())
+  title       String       @unique
+  slug        String       @unique
   summary     String
   outcome     String?
   gallery     String[]
   tags        String[]
-  services    String[] @default([])
-  metrics     Json     @default("[]")
-  gradient    String   @default("from-indigo-100 via-white to-sky-100")
-  seoId       String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  services    String[]     @default([])
+  metrics     Json         @default("[]")
+  gradient    String       @default("from-indigo-100 via-white to-sky-100")
+  seoId       String?      @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -133,7 +133,7 @@ model ShoppingCartItem {
   priceLabel String
   thumbnail  String?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id])
 
@@ -147,7 +147,7 @@ model OrderItem {
   toolId    String
   price     Float
   createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
   downloads Download[]
   order     Order       @relation(fields: [orderId], references: [id])
   tool      StartupTool @relation(fields: [toolId], references: [id])
@@ -160,7 +160,7 @@ model Payment {
   status      String
   tapChargeId String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   order       Order    @relation(fields: [orderId], references: [id])
 }
 
@@ -170,19 +170,19 @@ model Download {
   token       String    @unique
   accessedAt  DateTime?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
 }
 
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String
-  email     String
+  email     String   @unique
   phone     String?
   message   String
   status    String   @default("UNREAD")
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SeoMetadata {
@@ -192,7 +192,7 @@ model SeoMetadata {
   ogImage          String?
   slug             String?
   createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   blogPost         BlogPost?
   portfolioProject PortfolioProject?
   service          Service?
@@ -208,7 +208,10 @@ model Book {
   title          String?
   author         String?
   coverImage     String?
+  /// Free-text age label shown in the UI, e.g. "4-11 years".
   targetAge      String?
+  /// Normalized age bucket used for filtering: ALL_AGES | UNDER_6 | AGE_6_10 |
+  /// AGE_11_15 | AGE_16_18 | ADULTS. Null means unclassified.
   ageGroup       String?
   category       String?
   summary        String?
@@ -221,6 +224,7 @@ model Book {
   updatedAt      DateTime        @updatedAt
   currency       String          @default("BHD")
   isFree         Boolean         @default(false)
+  /// Null for free books; required and > 0 for paid books.
   price          Decimal?
   orders         BookOrder[]
   purchases      PurchasedBook[]
@@ -279,7 +283,7 @@ model BookOrder {
   tapChargeId String?   @unique
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   customer Customer       @relation(fields: [customerId], references: [id])
   book     Book           @relation(fields: [bookId], references: [id])
@@ -300,7 +304,7 @@ model Website {
   description    String?
   system         String?
   details        String?
-  features      String?
+  features       String?
   targetAudience String?
   responsive     String?
   price          Float
@@ -317,7 +321,7 @@ model NewsletterSubscriber {
   email     String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PageVisit {
