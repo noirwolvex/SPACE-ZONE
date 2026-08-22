@@ -3,11 +3,36 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/content-store";
+import { portfolioProjects } from "@/lib/portfolio";
 
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin(request);
   if (!admin.ok) return admin.response;
-  return NextResponse.json(await prisma.portfolioProject.findMany({ orderBy: { createdAt: "asc" } }));
+
+  try {
+    for (const project of portfolioProjects) {
+      const slug = slugify(project.title);
+      await prisma.portfolioProject.upsert({
+        where: { slug },
+        update: {},
+        create: {
+          title: project.title,
+          slug,
+          summary: project.summary,
+          outcome: project.outcome,
+          gallery: [],
+          tags: [project.category, ...project.services].filter(Boolean),
+          services: project.services,
+          metrics: project.metrics,
+          gradient: project.gradient,
+        },
+      });
+    }
+
+    return NextResponse.json(await prisma.portfolioProject.findMany({ orderBy: { createdAt: "asc" } }));
+  } catch {
+    return NextResponse.json({ error: "Unable to load portfolio." }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
