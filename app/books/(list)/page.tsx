@@ -71,7 +71,7 @@ export default async function BooksPage({
   // One batched signing round trip for the whole grid instead of one per card.
   const coverUrls = await getBookCoverUrls(books.map((book) => book.coverImage));
 
-  const booksWithAccess: BookWithAccess[] = books.map(({ coverImage, ...book }) => ({
+  const booksWithAccess = books.map(({ coverImage, ...book }) => ({
     ...book,
     price: book.price != null ? Number(book.price) : null,
     currency: book.currency ?? "BHD",
@@ -79,7 +79,7 @@ export default async function BooksPage({
     isPurchased: purchasedIds.has(book.id),
     // The storage reference itself is dropped before reaching the client.
     coverImageUrl: coverImage ? (coverUrls.get(coverImage) ?? null) : null,
-  }));
+  })) as BookWithAccess[];
 
   const stats = [
     { label: "Titles in library", value: totalBooks, icon: BookOpen },
