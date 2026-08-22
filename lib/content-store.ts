@@ -4,6 +4,7 @@ import { getStartupTool, startupTools, type StartupTool } from "@/lib/startup-to
 
 export type EditableService = Service & {
   id?: string;
+  image?: string | null;
 };
 
 export type EditableStartupTool = StartupTool & {
@@ -41,8 +42,14 @@ export async function getEditableServices(): Promise<EditableService[]> {
     const records = await prisma.service.findMany({
       orderBy: { createdAt: "asc" },
     });
-
     if (!records.length) return services;
+
+    const mediaRows = await prisma.$queryRaw<Array<{ serviceId: string; imageUrl: string | null }>>`
+      SELECT "serviceId", "imageUrl"
+      FROM "ServiceMedia"
+      WHERE "imageUrl" IS NOT NULL
+    `;
+    const imageByServiceId = new Map(mediaRows.map((row) => [row.serviceId, row.imageUrl]));
 
     return records.map((record) => {
       const fallback = getService(record.slug);
@@ -54,6 +61,7 @@ export async function getEditableServices(): Promise<EditableService[]> {
         summary: record.description,
         description: fallback?.description ?? record.description,
         icon: fallback?.icon ?? iconForService(record.slug, record.name),
+        image: imageByServiceId.get(record.id) ?? null,
         deliverables: linesToList(record.examples, fallback?.deliverables ?? ["Service deliverables"]),
         process: linesToList(record.workflow, fallback?.process ?? ["Plan the work", "Create the assets", "Prepare handoff"]),
         bestFor: fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"],
