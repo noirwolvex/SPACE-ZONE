@@ -42,12 +42,19 @@ export async function POST(request: NextRequest) {
     const summary = String(body.summary ?? "").trim();
     const image = String(body.image ?? "").trim() || null;
     const bestFor = String(body.bestFor ?? "").trim();
+    const slug = slugify(String(body.slug ?? name));
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
     }
+    if (!slug) {
+      return NextResponse.json({ error: "A valid slug is required." }, { status: 400 });
+    }
 
-    const slug = slugify(String(body.slug ?? name));
+    const existing = await prisma.service.findUnique({ where: { slug } });
+    if (existing) {
+      return NextResponse.json({ error: `A service with slug \"${slug}\" already exists.` }, { status: 409 });
+    }
 
     const service = await prisma.service.create({
       data: {
@@ -64,7 +71,8 @@ export async function POST(request: NextRequest) {
       await prisma.$executeRaw`
         INSERT INTO "ServiceMedia" ("serviceId", "imageUrl")
         VALUES (${service.id}, ${image})
-        ON CONFLICT ("serviceId") DO UPDATE SET "imageUrl" = EXCLUDED."imageUrl", "updatedAt" = CURRENT_TIMESTAMP
+        ON CONFLICT ("serviceId") DO UPDATE
+        SET "imageUrl" = EXCLUDED."imageUrl", "updatedAt" = CURRENT_TIMESTAMP
       `;
     }
 
@@ -74,6 +82,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(service, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Unable to save service." }, { status: 500 });
+    console.error("Unable to create service:", error);
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Unable to save service.", detail }, { status: 500 });
   }
 }
