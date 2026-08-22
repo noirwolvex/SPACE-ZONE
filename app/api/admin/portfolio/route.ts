@@ -10,12 +10,18 @@ export async function GET(request: NextRequest) {
   if (!admin.ok) return admin.response;
 
   try {
+    // Seed the six built-in projects only when they do not already exist.
+    // This avoids unique-slug/title conflicts while keeping old projects editable.
     for (const project of portfolioProjects) {
-      const slug = slugify(project.title);
-      await prisma.portfolioProject.upsert({
-        where: { slug },
-        update: {},
-        create: {
+      const existing = await prisma.portfolioProject.findUnique({ where: { title: project.title } });
+      if (existing) continue;
+
+      const baseSlug = slugify(project.title);
+      const slugExists = await prisma.portfolioProject.findUnique({ where: { slug: baseSlug } });
+      const slug = slugExists ? `${baseSlug}-${Date.now()}` : baseSlug;
+
+      await prisma.portfolioProject.create({
+        data: {
           title: project.title,
           slug,
           summary: project.summary,
@@ -29,9 +35,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(await prisma.portfolioProject.findMany({ orderBy: { createdAt: "asc" } }));
-  } catch {
-    return NextResponse.json({ error: "Unable to load portfolio." }, { status: 500 });
+    const projects = await prisma.portfolioProject.findMany({ orderBy: { createdAt: "asc" } });
+    return NextResponse.json(projects);
+  } catch (error) {
+    console.error("[admin/portfolio] GET failed:", error);
+    const message = error instanceof Error ? error.message : "Unable to load portfolio.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -62,7 +71,9 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/portfolio");
     return NextResponse.json(project, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Unable to create portfolio work." }, { status: 500 });
+  } catch (error) {
+    console.error("[admin/portfolio] POST failed:", error);
+    const message = error instanceof Error ? error.message : "Unable to create portfolio work.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
