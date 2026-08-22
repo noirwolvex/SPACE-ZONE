@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/admin-auth";
 import { slugify } from "@/lib/content-store";
 import { prisma } from "@/lib/prisma";
 
@@ -52,7 +53,8 @@ export async function PUT(request: NextRequest, { params }: RouteProps) {
     if (previous) revalidatePath(`/services/${previous.slug}`);
 
     return NextResponse.json(service);
-  } catch {
+  } catch (error) {
+    console.error("Unable to update service:", error);
     return NextResponse.json({ error: "Unable to update service." }, { status: 500 });
   }
 }
@@ -70,7 +72,8 @@ export async function DELETE(request: NextRequest, { params }: RouteProps) {
     revalidatePath(`/services/${service.slug}`);
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error("Unable to delete service:", error);
     return NextResponse.json({ error: "Unable to delete service." }, { status: 500 });
   }
 }
