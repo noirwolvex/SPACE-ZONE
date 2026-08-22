@@ -1,31 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { fulfilBookOrder, markBookOrderFailed } from "@/lib/payments/book-orders";
 import { fulfilToolOrder, markToolOrderFailed } from "@/lib/payments/tool-orders";
-import { isTapConfigured, mapTapStatus, verifyTapWebhookSignature, TAP_WEBHOOK_SECRET } from "@/lib/payments/tap";
+import { isTapConfigured, mapTapStatus, verifyTapWebhookSignature } from "@/lib/payments/tap";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") ?? "book";
 
-  if (!isTapConfigured() || !TAP_WEBHOOK_SECRET) {
+  if (!isTapConfigured()) {
     return NextResponse.json({ error: "Payment provider is not configured." }, { status: 503 });
   }
 
   const rawBody = await request.text();
   const signature = request.headers.get("hashstring") ?? request.headers.get("x-tap-signature");
 
-  if (!verifyTapWebhookSignature(rawBody, signature)) {
-    console.warn("Rejected Tap webhook with an invalid signature.");
-    return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
-  }
-
   let payload: Record<string, unknown>;
   try {
     payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+  }
+
+  if (!verifyTapWebhookSignature(payload, signature)) {
+    console.warn("Rejected Tap webhook with an invalid signature.");
+    return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
   const chargeId = typeof payload.id === "string" ? payload.id : null;
