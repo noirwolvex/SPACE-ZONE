@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
             description: service.summary,
             workflow: service.process.join("\n"),
             examples: service.deliverables.join("\n"),
+            bestFor: service.bestFor.join("\n"),
           },
         });
       }
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     const name = String(body.name ?? "").trim();
     const summary = String(body.summary ?? "").trim();
     const image = String(body.image ?? "").trim() || null;
+    const bestFor = String(body.bestFor ?? "").trim();
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
         description: summary,
         workflow: String(body.process ?? "").trim(),
         examples: String(body.deliverables ?? "").trim(),
+        bestFor: bestFor || null,
       },
     });
 
