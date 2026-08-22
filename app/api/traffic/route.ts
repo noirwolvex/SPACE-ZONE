@@ -6,8 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { pathname } = await request.json();
     const userAgent = request.headers.get("user-agent") || "";
-    
-    // Simple bot filter (optional)
+
     if (userAgent.toLowerCase().includes("bot")) {
       return NextResponse.json({ success: true });
     }
@@ -21,7 +20,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to record visit" }, { status: 500 });
+    console.error("Traffic recording failed:", error);
+    // Analytics must never make the page request fail.
+    return NextResponse.json({ success: false }, { status: 200 });
   }
 }
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     const count = await prisma.pageVisit.count();
     return NextResponse.json({ count });
   } catch (error) {
+    console.error("Traffic count failed:", error);
     return NextResponse.json({ count: 0 });
   }
 }
