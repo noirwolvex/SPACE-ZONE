@@ -44,12 +44,19 @@ export async function getEditableServices(): Promise<EditableService[]> {
     });
     if (!records.length) return services;
 
-    const mediaRows = await prisma.$queryRaw<Array<{ serviceId: string; imageUrl: string | null }>>`
-      SELECT "serviceId", "imageUrl"
-      FROM "ServiceMedia"
-      WHERE "imageUrl" IS NOT NULL
-    `;
-    const imageByServiceId = new Map(mediaRows.map((row) => [row.serviceId, row.imageUrl]));
+    // Media is optional. A failure reading the media table must not hide the
+    // service rows themselves from Admin or the public Services page.
+    let imageByServiceId = new Map<string, string | null>();
+    try {
+      const mediaRows = await prisma.$queryRaw<Array<{ serviceId: string; imageUrl: string | null }>>`
+        SELECT "serviceId", "imageUrl"
+        FROM "ServiceMedia"
+        WHERE "imageUrl" IS NOT NULL
+      `;
+      imageByServiceId = new Map(mediaRows.map((row) => [row.serviceId, row.imageUrl]));
+    } catch (mediaError) {
+      console.warn("Service media lookup failed; continuing without images:", mediaError);
+    }
 
     return records.map((record) => {
       const fallback = getService(record.slug);
@@ -67,7 +74,8 @@ export async function getEditableServices(): Promise<EditableService[]> {
         bestFor: linesToList(record.bestFor, fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"]),
       };
     });
-  } catch {
+  } catch (error) {
+    console.error("Service content lookup failed:", error);
     return services;
   }
 }
@@ -104,7 +112,8 @@ export async function getEditableStartupTools(): Promise<EditableStartupTool[]> 
         bestFor: fallback?.bestFor ?? ["Founders", "Marketing teams", "Small agencies"],
       };
     });
-  } catch {
+  } catch (error) {
+    console.error("Startup tools content lookup failed:", error);
     return startupTools;
   }
 }
