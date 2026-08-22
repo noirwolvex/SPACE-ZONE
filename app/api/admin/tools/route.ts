@@ -19,6 +19,13 @@ async function getCategoryId(name: string) {
   return category.id;
 }
 
+function lines(value: unknown) {
+  return String(value ?? "")
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin(request);
   if (!admin.ok) return admin.response;
@@ -37,6 +44,7 @@ export async function GET(request: NextRequest) {
             thumbnail: tool.thumbnail,
             benefits: tool.benefits,
             includedFiles: tool.includedFiles,
+            bestFor: tool.bestFor,
             categoryId: await getCategoryId(tool.category),
           },
         });
@@ -78,14 +86,9 @@ export async function POST(request: NextRequest) {
         description: String(body.description ?? summary).trim(),
         price: Number(body.price ?? 0),
         thumbnail,
-        benefits: String(body.benefits ?? "")
-          .split("\n")
-          .map((item) => item.trim())
-          .filter(Boolean),
-        includedFiles: String(body.includedFiles ?? "")
-          .split("\n")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        benefits: lines(body.benefits),
+        includedFiles: lines(body.includedFiles),
+        bestFor: lines(body.bestFor),
         categoryId,
       },
     });
