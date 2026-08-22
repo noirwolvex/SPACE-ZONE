@@ -40,22 +40,31 @@ model Customer {
 }
 
 model Service {
-  id          String       @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
-  slug        String       @unique
+  slug        String        @unique
   description String
   workflow    String?
   examples    String?
   bestFor     String?
-  seoId       String?      @unique
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
+  seoId       String?       @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  seoMetadata SeoMetadata?  @relation(fields: [seoId], references: [id])
+  media       ServiceMedia?
+}
+
+model ServiceMedia {
+  serviceId String   @id
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model PortfolioProject {
   id          String       @id @default(cuid())
-  title       String       @unique
+  title       String
   slug        String       @unique
   summary     String
   outcome     String?
@@ -78,7 +87,7 @@ model BlogPost {
   category    String
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime     @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -86,15 +95,15 @@ model ToolCategory {
   id        String        @id @default(cuid())
   name      String        @unique
   slug      String        @unique
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
   tools     StartupTool[]
 }
 
 model StartupTool {
-  id            String        @id @default(cuid())
-  name          String        @unique
-  slug          String        @unique
+  id            String       @id @default(cuid())
+  name          String       @unique
+  slug          String       @unique
   thumbnail     String?
   screenshots   String[]
   summary       String
@@ -105,12 +114,12 @@ model StartupTool {
   faqs          Json?
   price         Float
   categoryId    String
-  seoId         String?       @unique
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  seoId         String?      @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   orderItems    OrderItem[]
-  category      ToolCategory  @relation(fields: [categoryId], references: [id])
-  seoMetadata   SeoMetadata?  @relation(fields: [seoId], references: [id])
+  category      ToolCategory @relation(fields: [categoryId], references: [id])
+  seoMetadata   SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
 model Order {
@@ -145,15 +154,15 @@ model ShoppingCartItem {
 }
 
 model OrderItem {
-  id         String      @id @default(cuid())
-  orderId    String
-  toolId     String
-  price      Float
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  downloads  Download[]
-  order      Order       @relation(fields: [orderId], references: [id])
-  tool       StartupTool @relation(fields: [toolId], references: [id])
+  id        String      @id @default(cuid())
+  orderId   String
+  toolId    String
+  price     Float
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  downloads Download[]
+  order     Order       @relation(fields: [orderId], references: [id])
+  tool      StartupTool @relation(fields: [toolId], references: [id])
 }
 
 model Payment {
@@ -211,6 +220,7 @@ model Book {
   title          String?
   author         String?
   coverImage     String?
+  fileUrl        String?
   targetAge      String?
   ageGroup       String?
   category       String?
@@ -320,7 +330,7 @@ model NewsletterSubscriber {
   email     String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt  DateTime @updatedAt
 }
 
 model PageVisit {
