@@ -177,7 +177,7 @@ model Download {
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String
   phone     String?
   message   String
   status    String   @default("UNREAD")
