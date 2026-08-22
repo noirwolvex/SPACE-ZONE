@@ -6,22 +6,43 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+/**
+ * Next.js imports every route module while collecting page data at build
+ * time, before runtime env vars are necessarily available. Validating here
+ * (rather than with a top-level throw) keeps that import side-effect-free;
+ * the error still surfaces the moment a Supabase client is actually used.
+ */
+function requireSupabaseConfig() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+  return { supabaseUrl, supabaseAnonKey };
 }
 
-const resolvedSupabaseUrl = supabaseUrl;
-const resolvedSupabaseAnonKey = supabaseAnonKey;
+/** Defers client construction until first property access, e.g. `supabase.auth`. */
+function createLazyClient<T extends object>(factory: () => T): T {
+  let client: T | undefined;
+  return new Proxy({} as T, {
+    get(_target, prop, receiver) {
+      client ??= factory();
+      return Reflect.get(client as object, prop, receiver);
+    },
+  });
+}
 
-export const supabase = createBrowserClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    flowType: "pkce",
-  },
+export const supabase = createLazyClient(() => {
+  const { supabaseUrl, supabaseAnonKey } = requireSupabaseConfig();
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      flowType: "pkce",
+    },
+  });
 });
 
 export function createServerSupabaseClient(request: NextRequest, response: NextResponse) {
+  const { supabaseUrl: resolvedSupabaseUrl, supabaseAnonKey: resolvedSupabaseAnonKey } = requireSupabaseConfig();
   return createServerClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
     cookies: {
       getAll() {
@@ -57,10 +78,11 @@ export function applyAuthCookies<T extends NextResponse>(source: NextResponse, t
  * cannot mutate the response; token refresh happens in middleware instead.
  */
 export async function createServerComponentSupabaseClient() {
+  const { supabaseUrl, supabaseAnonKey } = requireSupabaseConfig();
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
 
-  return createServerClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -73,9 +95,12 @@ export async function createServerComponentSupabaseClient() {
 }
 
 export const supabaseAdmin = supabaseServiceRoleKey
-  ? createSupabaseClient(resolvedSupabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        persistSession: false,
-      },
+  ? createLazyClient(() => {
+      const { supabaseUrl } = requireSupabaseConfig();
+      return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+          persistSession: false,
+        },
+      });
     })
   : supabase;
