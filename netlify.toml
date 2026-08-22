@@ -1,0 +1,4 @@
+[build]
+  command = "npm install @opentelemetry/api@^1.9.1 --no-save && npm run build"
+  publish = ".next"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
