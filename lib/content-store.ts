@@ -44,9 +44,6 @@ export async function getEditableServices(): Promise<EditableService[]> {
     });
     if (!records.length) return services;
 
-    // Media is optional. Use the generated Prisma delegate instead of $queryRaw
-    // so this path remains compatible with the lazy Prisma adapter used by
-    // OpenNext/Hyperdrive during build and runtime.
     let imageByServiceId = new Map<string, string | null>();
     try {
       const mediaRows = await prisma.serviceMedia.findMany({
@@ -109,7 +106,7 @@ export async function getEditableStartupTools(): Promise<EditableStartupTool[]> 
         thumbnail: record.thumbnail ?? fallback?.thumbnail ?? "/tools/startup-launch-kit.png",
         benefits: record.benefits.length ? record.benefits : fallback?.benefits ?? ["Clearer launch workflow"],
         includedFiles: record.includedFiles.length ? record.includedFiles : fallback?.includedFiles ?? ["Product resources"],
-        bestFor: fallback?.bestFor ?? ["Founders", "Marketing teams", "Small agencies"],
+        bestFor: record.bestFor.length ? record.bestFor : fallback?.bestFor ?? ["Founders", "Marketing teams", "Small agencies"],
       };
     });
   } catch (error) {
