@@ -11,9 +11,9 @@ export async function GET(request: NextRequest) {
 
   try {
     // Seed the six built-in projects only when they do not already exist.
-    // This avoids unique-slug/title conflicts while keeping old projects editable.
+    // Title is not unique in the live database schema, so use findFirst here.
     for (const project of portfolioProjects) {
-      const existing = await prisma.portfolioProject.findUnique({ where: { title: project.title } });
+      const existing = await prisma.portfolioProject.findFirst({ where: { title: project.title } });
       if (existing) continue;
 
       const baseSlug = slugify(project.title);
