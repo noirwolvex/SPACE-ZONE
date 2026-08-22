@@ -287,22 +287,25 @@ model BookOrder {
 }
 
 model Website {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  image       String?
-  gallery     String[] @default([])
-  summary     String?
-  description String?
-  system      String?
-  details     String?
-  price       Float
-  currency    String
-  category    String?
-  websiteUrl  String
-  isPublished Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  image          String?
+  gallery        String[] @default([])
+  summary       String?
+  description   String?
+  system        String?
+  details       String?
+  features      String?
+  targetAudience String?
+  responsive    String?
+  price         Float
+  currency      String
+  category      String?
+  websiteUrl    String
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now())
 }
 
 model NewsletterSubscriber {
