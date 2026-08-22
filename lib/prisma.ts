@@ -6,28 +6,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-type HyperdriveBinding = {
-  connectionString?: string;
+type WorkerEnv = {
+  HYPERDRIVE?: { connectionString: string };
 };
 
 function getConnectionString() {
-  const hyperdrive = (workerEnv as typeof workerEnv & { HYPERDRIVE?: HyperdriveBinding }).HYPERDRIVE;
-  const hyperdriveConnectionString = hyperdrive?.connectionString;
-
-  if (hyperdriveConnectionString) {
-    return hyperdriveConnectionString;
-  }
-
-  const localHyperdriveConnectionString = process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE;
-  if (localHyperdriveConnectionString) {
-    return localHyperdriveConnectionString;
-  }
+  const hyperdrive = (workerEnv as unknown as WorkerEnv | undefined)?.HYPERDRIVE;
+  if (hyperdrive?.connectionString) return hyperdrive.connectionString;
 
   const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL or HYPERDRIVE connection is not configured");
-  }
-
+  if (!connectionString) throw new Error("DATABASE_URL is not configured");
   return connectionString;
 }
 
@@ -38,6 +26,9 @@ function createPrismaClient() {
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 10000,
     allowExitOnIdle: true,
+    ssl: {
+      rejectUnauthorized: false,
+    },
   });
 
   return new PrismaClient({ adapter });
