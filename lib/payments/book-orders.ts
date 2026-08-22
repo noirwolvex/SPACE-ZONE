@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { amountsMatch, grantsAccess, isTerminalOrderStatus } from "@/lib/payments/order-status";
 
