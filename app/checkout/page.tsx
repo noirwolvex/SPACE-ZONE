@@ -4,11 +4,11 @@ import CheckoutForm from "@/components/CheckoutForm";
 export const revalidate = 0;
 
 interface CheckoutPageProps {
-  searchParams: { bookId?: string };
+  searchParams: Promise<{ bookId?: string }>;
 }
 
 export default async function CheckoutPage({ searchParams }: CheckoutPageProps) {
-  const bookId = searchParams.bookId;
+  const { bookId } = await searchParams;
   if (!bookId) {
     return (
       <main className="flex-1 flex flex-col pt-24 pb-16 bg-[#050505] min-h-[90vh]">
