@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const name = String(body.name ?? "").trim();
     const summary = String(body.summary ?? "").trim();
+    const image = String(body.image ?? "").trim() || null;
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
@@ -55,6 +56,14 @@ export async function POST(request: NextRequest) {
         examples: String(body.deliverables ?? "").trim(),
       },
     });
+
+    if (image) {
+      await prisma.$executeRaw`
+        INSERT INTO "ServiceMedia" ("serviceId", "imageUrl")
+        VALUES (${service.id}, ${image})
+        ON CONFLICT ("serviceId") DO UPDATE SET "imageUrl" = EXCLUDED."imageUrl", "updatedAt" = CURRENT_TIMESTAMP
+      `;
+    }
 
     revalidatePath("/");
     revalidatePath("/services");
