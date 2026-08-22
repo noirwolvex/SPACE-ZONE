@@ -195,31 +195,35 @@ model SeoMetadata {
 }
 
 model Book {
-  id          String          @id @default(cuid())
-  filename    String
-  path        String          @unique
-  size        Int
-  uploadedAt  DateTime        @default(now())
-  title       String?
-  author      String?
-  coverImage  String?
-  fileUrl     String?
+  id             String          @id @default(cuid())
+  filename       String
+  path           String          @unique
+  size           Int
+  uploadedAt     DateTime        @default(now())
+  title          String?
+  author         String?
+  coverImage     String?
   /// Free-text age label shown in the UI, e.g. "4-11 years".
-  targetAge   String?
+  targetAge      String?
   /// Normalized age bucket used for filtering: ALL_AGES | UNDER_6 | AGE_6_10 |
   /// AGE_11_15 | AGE_16_18 | ADULTS. Null means unclassified.
-  ageGroup    String?
-  category    String?
-  summary     String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  currency    String          @default("BHD")
-  isFree      Boolean         @default(false)
+  ageGroup       String?
+  category       String?
+  summary        String?
+  features       String?
+  targetAudience String?
+  bookSize       String?
+  pageCount      Int?
+  seriesParts    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  currency       String          @default("BHD")
+  isFree         Boolean         @default(false)
   /// Null for free books; required and > 0 for paid books.
-  price       Decimal?
-  orders      BookOrder[]
-  purchases   PurchasedBook[]
-  images      BookImage[]
+  price          Decimal?
+  orders         BookOrder[]
+  purchases      PurchasedBook[]
+  images         BookImage[]
 
   @@index([category])
   @@index([ageGroup])
@@ -292,20 +296,20 @@ model Website {
   slug           String   @unique
   image          String?
   gallery        String[] @default([])
-  summary       String?
-  description   String?
-  system        String?
-  details       String?
-  features      String?
+  summary        String?
+  description    String?
+  system         String?
+  details        String?
+  features       String?
   targetAudience String?
-  responsive    String?
-  price         Float
-  currency      String
-  category      String?
-  websiteUrl    String
-  isPublished   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now())
+  responsive     String?
+  price          Float
+  currency       String
+  category       String?
+  websiteUrl     String
+  isPublished    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
 }
 
 model NewsletterSubscriber {
