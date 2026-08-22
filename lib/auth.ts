@@ -51,21 +51,27 @@ export async function getUserFromRequest(request: NextRequest, response: NextRes
 /**
  * Session lookup for Server Components / pages.
  * Returns null when there is no authenticated Supabase user.
+ * Authentication failures must not take public storefront pages down.
  */
 export async function getCurrentUser() {
-  const supabase = await createServerComponentSupabaseClient();
-  const { data: userData, error } = await supabase.auth.getUser();
-  if (error || !userData.user) {
+  try {
+    const supabase = await createServerComponentSupabaseClient();
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (error || !userData.user) {
+      return null;
+    }
+
+    const profile = await ensureProfileForUser(userData.user);
+    const role = profile?.role === "ADMIN" ? "ADMIN" : "USER";
+
+    return {
+      user: userData.user,
+      profile,
+      role,
+      isAdmin: role === "ADMIN",
+    };
+  } catch (error) {
+    console.warn("Server session lookup failed; continuing as signed out:", error);
     return null;
   }
-
-  const profile = await ensureProfileForUser(userData.user);
-  const role = profile?.role === "ADMIN" ? "ADMIN" : "USER";
-
-  return {
-    user: userData.user,
-    profile,
-    role,
-    isAdmin: role === "ADMIN",
-  };
 }
