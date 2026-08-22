@@ -8,6 +8,9 @@ export interface WebsiteRecord {
   description?: string | null;
   system?: string | null;
   details?: string | null;
+  features?: string | null;
+  targetAudience?: string | null;
+  responsive?: string | null;
   price: number;
   currency: string;
   category?: string | null;
@@ -23,6 +26,9 @@ export type WebsiteFormValues = {
   description?: string;
   system?: string;
   details?: string;
+  features?: string;
+  targetAudience?: string;
+  responsive?: string;
   category: string;
   price?: string;
   currency: string;
