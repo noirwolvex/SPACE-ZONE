@@ -44,15 +44,15 @@ export async function getEditableServices(): Promise<EditableService[]> {
     });
     if (!records.length) return services;
 
-    // Media is optional. A failure reading the media table must not hide the
-    // service rows themselves from Admin or the public Services page.
+    // Media is optional. Use the generated Prisma delegate instead of $queryRaw
+    // so this path remains compatible with the lazy Prisma adapter used by
+    // OpenNext/Hyperdrive during build and runtime.
     let imageByServiceId = new Map<string, string | null>();
     try {
-      const mediaRows = await prisma.$queryRaw<Array<{ serviceId: string; imageUrl: string | null }>>`
-        SELECT "serviceId", "imageUrl"
-        FROM "ServiceMedia"
-        WHERE "imageUrl" IS NOT NULL
-      `;
+      const mediaRows = await prisma.serviceMedia.findMany({
+        where: { imageUrl: { not: null } },
+        select: { serviceId: true, imageUrl: true },
+      });
       imageByServiceId = new Map(mediaRows.map((row) => [row.serviceId, row.imageUrl]));
     } catch (mediaError) {
       console.warn("Service media lookup failed; continuing without images:", mediaError);
