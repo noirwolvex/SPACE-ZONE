@@ -8,12 +8,9 @@ const protectedPaths = [
   "/purchased-websites",
 ];
 
-const authPages = ["/login", "/signup", "/forgot-password", "/verify-email", "/reset-password"];
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = protectedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-  const isAuthPage = authPages.includes(pathname);
 
   const response = NextResponse.next({ request: { headers: request.headers } });
 
@@ -42,10 +39,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAuthPage && user) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   return response;
 }
 
@@ -56,10 +49,5 @@ export const config = {
     "/purchased-books/:path*",
     "/purchased-websites/:path*",
     "/api/books/:path*",
-    "/login",
-    "/signup",
-    "/forgot-password",
-    "/verify-email",
-    "/reset-password",
   ],
 };
