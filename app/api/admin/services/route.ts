@@ -76,9 +76,13 @@ export async function POST(request: NextRequest) {
       `;
     }
 
-    revalidatePath("/");
-    revalidatePath("/services");
-    revalidatePath(`/services/${service.slug}`);
+    try {
+      revalidatePath("/");
+      revalidatePath("/services");
+      revalidatePath(`/services/${service.slug}`);
+    } catch (revalidationError) {
+      console.warn("Service cache revalidation failed; service was already saved:", revalidationError);
+    }
 
     return NextResponse.json(service, { status: 201 });
   } catch (error) {

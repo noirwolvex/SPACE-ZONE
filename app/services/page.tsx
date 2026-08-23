@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Code, ImageIcon, Presentation, Rocket, Sparkles } from "lucide-react";
 import { getEditableServices, type EditableService } from "@/lib/content-store";
 
+export const dynamic = "force-dynamic";
+
 function ServiceIcon({ icon }: { icon: EditableService["icon"] }) {
   if (icon === "code") return <Code className="h-8 w-8" />;
   if (icon === "rocket") return <Rocket className="h-8 w-8" />;
