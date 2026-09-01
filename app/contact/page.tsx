@@ -8,7 +8,14 @@ import { useAuth } from "@/components/auth/AuthProvider";
 export default function Contact() { 
   const router = useRouter();
   const { user } = useAuth(); // ✅ Check authentication
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+    details: "",
+    contactType: "Inquiry",
+    attachmentName: "",
+  });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -39,7 +46,7 @@ export default function Contact() {
       }
       
       setStatus("success");
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", message: "", details: "", contactType: "Inquiry", attachmentName: "" });
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to send message");
       setStatus("error");
@@ -108,6 +115,50 @@ export default function Contact() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
                 <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-indigo-500/30 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition" placeholder="you@example.com" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Contact Type</label>
+                <select
+                  value={formData.contactType}
+                  onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-indigo-500/30 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition"
+                >
+                  <option value="Inquiry">Inquiry</option>
+                  <option value="Problem">Problem</option>
+                  <option value="Suggestion">Suggestion</option>
+                  <option value="Offer">Offer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Upload Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    setFormData({
+                      ...formData,
+                      attachmentName: file ? file.name : "",
+                    });
+                  }}
+                  className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-indigo-500 dark:border-indigo-500/30 dark:bg-slate-950/50 dark:text-slate-200"
+                />
+                {formData.attachmentName && (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Selected file: {formData.attachmentName}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Other Details</label>
+                <textarea
+                  rows={3}
+                  value={formData.details}
+                  onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-indigo-500/30 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition"
+                  placeholder="Add any extra information, timeline, budget, or context..."
+                ></textarea>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message</label>
                 <textarea required rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-indigo-500/30 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition" placeholder="Tell us about your project..."></textarea>

@@ -140,7 +140,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"services" | "tools">("services");
+  const [activeTab, setActiveTab] = useState<"services" | "tools" | null>(null);
   const [services, setServices] = useState<AdminService[]>([]);
   const [tools, setTools] = useState<AdminTool[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -571,7 +571,9 @@ export default function AdminDashboard() {
               }))}
             />
           </section>
-        ) : (
+        ) : null}
+
+        {activeTab === "tools" ? (
           <section className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <form
               onSubmit={saveTool}
@@ -763,7 +765,7 @@ export default function AdminDashboard() {
               }))}
             />
           </section>
-        )}
+        ) : null}
       </div>
     </main>
   );

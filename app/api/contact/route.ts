@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const json = await request.json();
-    const { name, email, message, phone } = json;
+    const { name, email, message, phone, details, contactType, attachmentName } = json;
 
     // ✅ Validate inputs
     if (!message || typeof message !== "string" || message.trim().length === 0) {
@@ -31,12 +31,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const formattedDetails = typeof details === "string" && details.trim() ? `\n\nOther details: ${details.trim()}` : "";
+    const formattedType = typeof contactType === "string" && contactType.trim() ? `\nContact type: ${contactType.trim()}` : "";
+    const formattedAttachment = typeof attachmentName === "string" && attachmentName.trim() ? `\nAttachment: ${attachmentName.trim()}` : "";
+    const finalMessage = `${message.trim()}${formattedType}${formattedDetails}${formattedAttachment}`;
+
     // ✅ Use authenticated user's email, not provided one (prevent email spoofing)
     const contactMessage = await prisma.contactMessage.create({
       data: {
         name: name.trim(),
         email: auth.profile.email || email, // Use authenticated email as fallback
-        message: message.trim(),
+        message: finalMessage,
         phone: phone ? String(phone).trim() : null,
       },
     });

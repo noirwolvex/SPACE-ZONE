@@ -42,10 +42,11 @@ export default function Navbar() {
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium">
           <Link href="/services" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Services</Link>
-          <Link href="/websites" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">OUR WEBSITE</Link>
+          <Link href="/websites" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Projects</Link>
           <Link href="/portfolio" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Portfolio</Link>
           <Link href="/tools" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Startup Tools</Link>
           <Link href="/books" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Book</Link>
+          <Link href="/ai-chat" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">AI Chat</Link>
           <Link href="/about" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">About</Link>
           <Link href="/cart" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-700 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <ShoppingCart className="h-4 w-4" />

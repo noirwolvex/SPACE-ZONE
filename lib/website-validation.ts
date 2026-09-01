@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const WEBSITE_CATEGORIES = ["Business", "Portfolio", "Ecommerce", "Blog", "Landing", "Other"] as const;
+export const WEBSITE_CATEGORIES = ["KIDS", "LEARNING", "GAME", "BUSINESS", "Portfolio", "Ecommerce", "Blog", "Landing", "Other"] as const;
 export const WEBSITE_RESPONSIVE_OPTIONS = ["Fully Responsive", "Partially Responsive", "Desktop Only", "Mobile Only"] as const;
 
 export const websiteSchema = z.object({

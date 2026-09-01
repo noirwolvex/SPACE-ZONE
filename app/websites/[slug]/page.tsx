@@ -20,7 +20,7 @@ export default async function WebsiteDetailsPage({ params }: Props) {
     <main className="flex-1 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.14),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#eef2ff_100%)] px-4 py-10 text-slate-900 dark:bg-[#050505] dark:text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <Link href="/websites" className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-          ← Back to Our Website
+          ← Back to Projects
         </Link>
 
         <section className="mt-6 overflow-hidden rounded-[32px] border border-slate-200 bg-white/85 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-indigo-500/20 dark:bg-slate-900/70">
