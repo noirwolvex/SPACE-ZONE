@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getWebsiteImageUrl } from "@/lib/website-storage";
+import GameFilters from "@/components/GameFilters";
 
 export const revalidate = 0;
 
@@ -25,10 +26,61 @@ function normalizeCategory(value?: string | null) {
   return normalized;
 }
 
+function searchableGameText(site: {
+  title: string;
+  summary: string | null;
+  description: string | null;
+  details: string | null;
+  features: string | null;
+  targetAudience: string | null;
+}) {
+  return [
+    site.title,
+    site.summary,
+    site.description,
+    site.details,
+    site.features,
+    site.targetAudience,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function matchesGameAge(site: Parameters<typeof searchableGameText>[0], age: string) {
+  if (age === "ALL") return true;
+  const text = searchableGameText(site);
+
+  const patterns: Record<string, RegExp> = {
+    "3-5": /(3\s*[-–]\s*5|ages?\s*3\s*(to|[-–])\s*5|ages?\s*3\b|preschool|pre-?k|kindergarten)/i,
+    "6-8": /(6\s*[-–]\s*8|ages?\s*6\s*(to|[-–])\s*8|ages?\s*6\b|early elementary)/i,
+    "9-12": /(9\s*[-–]\s*12|ages?\s*9\s*(to|[-–])\s*12|ages?\s*9\b|upper elementary|preteen)/i,
+    "13+": /(13\s*\+|ages?\s*(13|14|15|16|17|18)|teen|young adult|adult)/i,
+  };
+
+  return patterns[age]?.test(text) ?? false;
+}
+
+function matchesGameType(site: Parameters<typeof searchableGameText>[0], type: string) {
+  if (type === "ALL") return true;
+  const text = searchableGameText(site);
+
+  const keywords: Record<string, string[]> = {
+    PUZZLE: ["puzzle", "logic", "memory", "match", "maze", "brain"],
+    ADVENTURE: ["adventure", "explorer", "safari", "quest", "journey"],
+    EDUCATIONAL: ["educational", "learning", "learn", "quiz", "math", "science", "vocabulary", "alphabet", "coding"],
+    ARCADE: ["arcade", "race", "rush", "reaction", "runner", "hunt"],
+    STRATEGY: ["strategy", "strategic", "tactic", "planning"],
+    CREATIVE: ["creative", "music", "coloring", "drawing", "story", "builder", "design", "create"],
+  };
+
+  return (keywords[type] ?? []).some((keyword) => text.includes(keyword));
+}
+
 export default async function WebsitesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ category?: string }> | { category?: string };
+  searchParams?: Promise<{ category?: string; age?: string; type?: string }> | { category?: string; age?: string; type?: string };
 }) {
   const resolvedSearchParams =
     searchParams instanceof Promise ? await searchParams : searchParams;
@@ -52,12 +104,24 @@ export default async function WebsitesPage({
   }
 
   const selectedCategory = normalizeCategory(resolvedSearchParams?.category ?? "ALL");
-  const filteredSites =
+  const selectedAge = (resolvedSearchParams?.age ?? "ALL").trim().toUpperCase();
+  const selectedType = (resolvedSearchParams?.type ?? "ALL").trim().toUpperCase();
+
+  const categoryFilteredSites =
     selectedCategory === "ALL"
       ? sitesWithImages
       : sitesWithImages.filter(
           (site) => normalizeCategory(site.category) === selectedCategory
         );
+
+  const filteredSites =
+    selectedCategory === "GAME"
+      ? categoryFilteredSites.filter(
+          (site) =>
+            matchesGameAge(site, selectedAge) &&
+            matchesGameType(site, selectedType)
+        )
+      : categoryFilteredSites;
 
   const highlights = [
     { title: "Elegant storytelling", text: "Every experience is shaped to feel premium, calm, and easy to trust." },
@@ -158,6 +222,10 @@ export default async function WebsitesPage({
               );
             })}
           </div>
+
+          {selectedCategory === "GAME" && (
+            <GameFilters selectedAge={selectedAge} selectedType={selectedType} />
+          )}
         </section>
 
         <section id="showcase" className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
