@@ -29,7 +29,9 @@ export async function ensureProfileForUser(user: { id: string; email?: string | 
         return prisma.customer.findUnique({ where: { supabaseId: user.id } });
       }
     }
-    return existing;
+
+    // A different Supabase account already owns this email/profile.
+    return null;
   }
 
   try {
@@ -45,8 +47,7 @@ export async function ensureProfileForUser(user: { id: string; email?: string | 
   } catch (error) {
     // Another request may have created the profile between find and create.
     console.warn("Customer profile creation raced with another request:", error);
-    return prisma.customer.findUnique({ where: { supabaseId: user.id } }) ??
-      prisma.customer.findUnique({ where: { email: user.email } });
+    return prisma.customer.findUnique({ where: { supabaseId: user.id } });
   }
 }
 
