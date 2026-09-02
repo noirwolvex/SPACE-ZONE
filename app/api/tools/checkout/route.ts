@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { createPendingToolOrder } from "@/lib/payments/tool-orders";
 import { createTapCharge, isTapConfigured } from "@/lib/payments/tap";
 
+const MAX_ITEMS_PER_CHECKOUT = 20;
+
 export async function POST(request: NextRequest) {
   const authCarrier = NextResponse.next();
   const json = (body: unknown, init?: ResponseInit) =>
@@ -22,6 +24,10 @@ export async function POST(request: NextRequest) {
     return json({ error: "Cart is empty." }, { status: 400 });
   }
 
+  if (items.length > MAX_ITEMS_PER_CHECKOUT) {
+    return json({ error: `You can purchase up to ${MAX_ITEMS_PER_CHECKOUT} tools at once.` }, { status: 400 });
+  }
+
   const supabase = createServerSupabaseClient(request, authCarrier);
   const { data: userData, error } = await supabase.auth.getUser();
 
@@ -34,36 +40,49 @@ export async function POST(request: NextRequest) {
     return json({ error: "Unable to resolve your customer profile." }, { status: 403 });
   }
 
-  const normalizedItems = await Promise.all(
-    items.map(async (rawItem: any) => {
-      const toolId = typeof rawItem?.toolId === "string" ? rawItem.toolId : null;
-      const price = Number(rawItem?.price ?? 0);
-
-      if (!toolId || !Number.isFinite(price) || price <= 0) {
-        return null;
-      }
-
-      const tool = await prisma.startupTool.findUnique({
-        where: { id: toolId },
-        select: { id: true, price: true },
-      });
-
-      if (!tool) {
-        return null;
-      }
-
-      return {
-        toolId: tool.id,
-        price: Number(tool.price),
-        quantity: 1,
-      };
-    })
+  const requestedToolIds = items.map((rawItem: unknown) =>
+    rawItem && typeof rawItem === "object" && typeof (rawItem as { toolId?: unknown }).toolId === "string"
+      ? (rawItem as { toolId: string }).toolId
+      : null
   );
+  const validRequestedToolIds = requestedToolIds.filter((id): id is string => Boolean(id));
+
+  if (new Set(validRequestedToolIds).size !== validRequestedToolIds.length) {
+    return json({ error: "A tool can only be included once per checkout." }, { status: 400 });
+  }
+
+  const tools = validRequestedToolIds.length
+    ? await prisma.startupTool.findMany({
+        where: { id: { in: validRequestedToolIds } },
+        select: { id: true, price: true },
+      })
+    : [];
+
+  const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
+
+  const normalizedItems = items.map((rawItem: unknown) => {
+    const toolId = rawItem && typeof rawItem === "object" && typeof (rawItem as { toolId?: unknown }).toolId === "string"
+      ? (rawItem as { toolId: string }).toolId
+      : null;
+
+    if (!toolId) return null;
+
+    const tool = toolsById.get(toolId);
+    if (!tool || !Number.isFinite(Number(tool.price)) || Number(tool.price) <= 0) {
+      return null;
+    }
+
+    return {
+      toolId: tool.id,
+      price: Number(tool.price),
+      quantity: 1,
+    };
+  });
 
   const validItems = normalizedItems.filter(Boolean) as Array<{ toolId: string; price: number; quantity: number }>;
 
-  if (!validItems.length) {
-    return json({ error: "No valid tools were found in your cart." }, { status: 400 });
+  if (validItems.length !== items.length) {
+    return json({ error: "One or more selected tools are no longer available." }, { status: 400 });
   }
 
   const order = await createPendingToolOrder({
@@ -113,9 +132,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { payment: { upsert: { update: { tapChargeId: charge.chargeId, status: "PENDING" }, create: { amount: Number(order.total), status: "PENDING", tapChargeId: charge.chargeId } } } },
+  await prisma.payment.update({
+    where: { orderId: order.id },
+    data: { tapChargeId: charge.chargeId, status: "PENDING", amount: Number(order.total) },
   });
 
   return json({
