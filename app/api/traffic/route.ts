@@ -2,10 +2,44 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 
+const MAX_PATH_LENGTH = 512;
+const MAX_USER_AGENT_LENGTH = 512;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 60;
+
+const requestCounts = new Map<string, { startedAt: number; count: number }>();
+
+function getClientKey(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  return forwardedFor || realIp || "unknown";
+}
+
+function isRateLimited(key: string) {
+  const now = Date.now();
+  const current = requestCounts.get(key);
+
+  if (!current || now - current.startedAt >= RATE_LIMIT_WINDOW_MS) {
+    requestCounts.set(key, { startedAt: now, count: 1 });
+    return false;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) return true;
+  current.count += 1;
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { pathname } = await request.json();
-    const userAgent = request.headers.get("user-agent") || "";
+    const clientKey = getClientKey(request);
+    if (isRateLimited(clientKey)) {
+      return NextResponse.json({ success: false, error: "Rate limit exceeded." }, { status: 429 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const rawPathname = typeof body?.pathname === "string" ? body.pathname.trim() : "/";
+    const pathname = rawPathname.slice(0, MAX_PATH_LENGTH) || "/";
+    const userAgent = (request.headers.get("user-agent") || "").slice(0, MAX_USER_AGENT_LENGTH);
 
     if (userAgent.toLowerCase().includes("bot")) {
       return NextResponse.json({ success: true });
@@ -13,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.pageVisit.create({
       data: {
-        path: pathname || "/",
+        path: pathname,
         userAgent,
       },
     });
