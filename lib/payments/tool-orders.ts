@@ -1,4 +1,3 @@
-import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export function generateToolOrderNo() {
@@ -6,6 +5,14 @@ export function generateToolOrderNo() {
 }
 
 const TOOL_CURRENCY = "BHD";
+
+function money(value: number) {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000;
+}
+
+function amountsMatch(expected: number, actual: number) {
+  return Math.abs(money(expected) - money(actual)) <= 0.001;
+}
 
 export async function createPendingToolOrder(params: {
   customerId: string;
@@ -21,7 +28,17 @@ export async function createPendingToolOrder(params: {
     throw new Error(`Unsupported tool order currency: ${requestedCurrency}`);
   }
 
-  const total = params.items.reduce((sum, item) => sum + Number(item.price) * (item.quantity ?? 1), 0);
+  const toolIds = params.items.map((item) => item.toolId);
+  if (new Set(toolIds).size !== toolIds.length) {
+    throw new Error("A tool can only appear once in an order.");
+  }
+
+  const invalidQuantity = params.items.find((item) => (item.quantity ?? 1) !== 1);
+  if (invalidQuantity) {
+    throw new Error("Tool quantity must be exactly 1.");
+  }
+
+  const total = money(params.items.reduce((sum, item) => sum + Number(item.price), 0));
 
   const order = await prisma.order.create({
     data: {
@@ -32,7 +49,7 @@ export async function createPendingToolOrder(params: {
       items: {
         create: params.items.map((item) => ({
           toolId: item.toolId,
-          price: Number(item.price),
+          price: money(Number(item.price)),
         })),
       },
     },
@@ -79,7 +96,7 @@ export async function fulfilToolOrder(params: {
           await tx.payment.create({
             data: {
               orderId: order.id,
-              amount: Number(order.total),
+              amount: money(Number(order.total)),
               status: "PAID",
               tapChargeId: params.tapChargeId ?? null,
             },
@@ -88,14 +105,14 @@ export async function fulfilToolOrder(params: {
         return { ok: true, alreadyPaid: true, paymentId: order.payment?.id ?? order.id };
       }
 
-      const total = Number(order.total);
+      const total = money(Number(order.total));
       const paidCurrency = (params.paidCurrency ?? "").toUpperCase();
 
-      if (params.paidAmount == null) {
+      if (params.paidAmount == null || !Number.isFinite(Number(params.paidAmount))) {
         return { ok: false, error: "Payment amount could not be verified.", reason: "REJECTED" };
       }
 
-      if (Number(params.paidAmount) !== total) {
+      if (!amountsMatch(total, Number(params.paidAmount))) {
         return { ok: false, error: "Paid amount does not match the order.", reason: "REJECTED" };
       }
 
@@ -135,7 +152,7 @@ export async function markToolOrderFailed(orderId: string, status: "FAILED" | "C
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { status: true, orderNo: true },
+      select: { status: true },
     });
 
     if (!order) return;
