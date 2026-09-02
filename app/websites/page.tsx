@@ -182,9 +182,7 @@ export default async function WebsitesPage({
               const isActive = selectedCategory === key;
               const href = key === "ALL"
                 ? "/websites"
-                : key === "BUSINESS"
-                  ? "http://localhost:3000/websites?category=BUSINESS"
-                  : `/websites?category=${encodeURIComponent(key)}`;
+                : `/websites?category=${encodeURIComponent(key)}`;
 
               return (
                 <Link
