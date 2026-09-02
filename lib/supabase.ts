@@ -19,6 +19,13 @@ function requireSupabaseConfig() {
   return { supabaseUrl, supabaseAnonKey };
 }
 
+function requireSupabaseServiceRoleKey() {
+  if (!supabaseServiceRoleKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured for this server operation");
+  }
+  return supabaseServiceRoleKey;
+}
+
 /** Defers client construction until first property access, e.g. `supabase.auth`. */
 function createLazyClient<T extends object>(factory: () => T): T {
   let client: T | undefined;
@@ -94,13 +101,16 @@ export async function createServerComponentSupabaseClient() {
   });
 }
 
-export const supabaseAdmin = supabaseServiceRoleKey
-  ? createLazyClient(() => {
-      const { supabaseUrl } = requireSupabaseConfig();
-      return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: {
-          persistSession: false,
-        },
-      });
-    })
-  : supabase;
+/**
+ * Server-only Supabase client. Never fall back to the anon client: admin
+ * operations must fail closed when the service-role key is missing.
+ */
+export const supabaseAdmin = createLazyClient(() => {
+  const { supabaseUrl } = requireSupabaseConfig();
+  const serviceRoleKey = requireSupabaseServiceRoleKey();
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+    },
+  });
+});
