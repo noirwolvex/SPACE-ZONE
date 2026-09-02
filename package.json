@@ -1,5 +1,5 @@
 {
-    "name": "temp-app",
+    "name": "space-zone",
     "version": "0.1.0",
     "private": true,
     "scripts": {
@@ -42,7 +42,6 @@
         "eslint-config-next": "16.2.11",
         "prisma": "^7.8.0",
         "tailwindcss": "^4.3.3",
-        "tsx": "^4.21.0",
-        "typescript": "^5"
+        "tsx": "^4.21.0"
     }
 }
