@@ -6,6 +6,13 @@ type WorkerEnv = {
   HYPERDRIVE?: { connectionString: string };
 };
 
+type PrismaGlobal = typeof globalThis & {
+  __spaceZonePrisma?: PrismaClient;
+  __spaceZonePrismaConnectionString?: string;
+};
+
+const globalForPrisma = globalThis as PrismaGlobal;
+
 async function getConnectionString() {
   try {
     const { env } = await getCloudflareContext({ async: true });
@@ -20,19 +27,30 @@ async function getConnectionString() {
   return connectionString;
 }
 
-async function createPrismaClient() {
+async function getPrismaClient() {
+  const connectionString = await getConnectionString();
+
+  if (
+    globalForPrisma.__spaceZonePrisma &&
+    globalForPrisma.__spaceZonePrismaConnectionString === connectionString
+  ) {
+    return globalForPrisma.__spaceZonePrisma;
+  }
+
   const adapter = new PrismaPg({
-    connectionString: await getConnectionString(),
-    maxUses: 1,
+    connectionString,
+    max: Number(process.env.PRISMA_POOL_MAX || 5),
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 10000,
-    allowExitOnIdle: true,
     ssl: {
       rejectUnauthorized: false,
     },
   });
 
-  return new PrismaClient({ adapter });
+  const client = new PrismaClient({ adapter });
+  globalForPrisma.__spaceZonePrisma = client;
+  globalForPrisma.__spaceZonePrismaConnectionString = connectionString;
+  return client;
 }
 
 const lazyPrismaClient = new Proxy(
@@ -46,7 +64,7 @@ const lazyPrismaClient = new Proxy(
           },
           apply(_value, _thisArg, args) {
             return (async () => {
-              const client = await createPrismaClient();
+              const client = await getPrismaClient();
               let value: any = client;
               for (const key of path) value = value[key];
               return value(...args);
