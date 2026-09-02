@@ -53,9 +53,9 @@ function formatTapAmount(amount: number, currency: string) {
 /**
  * Create a charge with Tap and return the hosted payment URL.
  *
- * `reference.order` carries our orderNo, which is how the webhook finds the
- * order again. Network and shape failures are returned, never thrown, so a
- * provider outage leaves the order PENDING instead of 500-ing the Buy click.
+ * The order number is also sent as Tap's idempotent reference. Tap documents
+ * that reusing the same idempotent value within 24 hours returns the original
+ * charge response instead of creating a second charge.
  */
 export async function createTapCharge(request: TapChargeRequest): Promise<TapChargeResult> {
   if (!isTapConfigured()) {
@@ -68,14 +68,16 @@ export async function createTapCharge(request: TapChargeRequest): Promise<TapCha
     amount: request.amount,
     currency: request.currency,
     description: request.description,
-    // Tap echoes this back on the webhook.
-    reference: { order: request.orderNo },
+    reference: {
+      transaction: request.orderNo,
+      order: request.orderNo,
+      idempotent: request.orderNo,
+    },
     customer: {
       first_name: first,
       last_name: last,
       ...(request.customer.email ? { email: request.customer.email } : {}),
     },
-    // Hosted checkout across all enabled methods.
     source: { id: "src_all" },
     threeDSecure: true,
     save_card: false,
