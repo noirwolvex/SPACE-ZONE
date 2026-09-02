@@ -39,56 +39,61 @@ export async function createPendingToolOrder(params: {
     throw new Error("Tool quantity must be exactly 1.");
   }
 
-  const orderedToolIds = [...toolIds].sort();
-  const requestedItems = params.items.map((item) => ({
-    toolId: item.toolId,
-    price: money(Number(item.price)),
-  }));
-
-  // Reuse the newest matching pending order for this customer's exact set of tools.
-  // This protects against duplicate clicks/retries without trusting client prices.
-  const pendingOrders = await prisma.order.findMany({
-    where: { customerId: params.customerId, status: "PENDING" },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: { items: { select: { toolId: true, price: true } } },
-  });
-
-  for (const pending of pendingOrders) {
-    const pendingItems = pending.items
-      .map((item) => ({ toolId: item.toolId, price: money(Number(item.price)) }))
-      .sort((a, b) => a.toolId.localeCompare(b.toolId));
-
-    if (
-      pendingItems.length === requestedItems.length &&
-      pendingItems.every(
-        (item, index) =>
-          item.toolId === orderedToolIds[index] &&
-          amountsMatch(item.price, requestedItems.find((requested) => requested.toolId === item.toolId)?.price ?? -1),
-      )
-    ) {
-      return pending;
-    }
-  }
+  const requestedItems = params.items
+    .map((item) => ({
+      toolId: item.toolId,
+      price: money(Number(item.price)),
+    }))
+    .sort((a, b) => a.toolId.localeCompare(b.toolId));
 
   const total = money(params.items.reduce((sum, item) => sum + Number(item.price), 0));
 
-  return prisma.order.create({
-    data: {
-      orderNo: generateToolOrderNo(),
-      customerId: params.customerId,
-      total,
-      status: "PENDING",
-      items: {
-        create: params.items.map((item) => ({
-          toolId: item.toolId,
-          price: money(Number(item.price)),
-        })),
+  return prisma.$transaction(async (tx) => {
+    // Serialize checkout attempts for the same customer. This closes the
+    // find-then-create race that can happen on rapid duplicate clicks.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${params.customerId}))`;
+
+    const pendingOrders = await tx.order.findMany({
+      where: { customerId: params.customerId, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { items: { select: { toolId: true, price: true } } },
+    });
+
+    for (const pending of pendingOrders) {
+      const pendingItems = pending.items
+        .map((item) => ({ toolId: item.toolId, price: money(Number(item.price)) }))
+        .sort((a, b) => a.toolId.localeCompare(b.toolId));
+
+      if (
+        pendingItems.length === requestedItems.length &&
+        pendingItems.every(
+          (item, index) =>
+            item.toolId === requestedItems[index].toolId &&
+            amountsMatch(item.price, requestedItems[index].price),
+        )
+      ) {
+        return pending;
+      }
+    }
+
+    const order = await tx.order.create({
+      data: {
+        orderNo: generateToolOrderNo(),
+        customerId: params.customerId,
+        total,
+        status: "PENDING",
+        items: {
+          create: params.items.map((item) => ({
+            toolId: item.toolId,
+            price: money(Number(item.price)),
+          })),
+        },
       },
-    },
-    include: { items: true },
-  }).then(async (order) => {
-    await prisma.payment.upsert({
+      include: { items: true },
+    });
+
+    await tx.payment.upsert({
       where: { orderId: order.id },
       update: { amount: total, status: "PENDING", tapChargeId: null },
       create: {
