@@ -1,7 +1,7 @@
 import { ArrowUpRight, BriefcaseBusiness, Gamepad2, Layers3, Sparkles } from "lucide-react";
 
 const businessHubUrl = process.env.NEXT_PUBLIC_BUSINESS_HUB_URL || "http://localhost:3001";
-const kidsPlatformUrl = process.env.NEXT_PUBLIC_KIDS_PLATFORM_URL || "http://localhost:3002";
+const kidsPlatformUrl = process.env.NEXT_PUBLIC_KIDS_PLATFORM_URL || "http://localhost:5173/";
 
 const cardBase =
   "group relative block overflow-hidden rounded-3xl border bg-white/80 p-8 shadow-md backdrop-blur-xl transition duration-500 hover:-translate-y-1 sm:p-10";
