@@ -14,17 +14,20 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
+  const toolSlugs = items.filter((item) => item.kind === "TOOL").map((item) => item.slug);
+  const tools = toolSlugs.length
+    ? await prisma.startupTool.findMany({
+        where: { slug: { in: toolSlugs } },
+        select: { id: true, slug: true },
+      })
+    : [];
+  const toolIdsBySlug = new Map(tools.map((tool) => [tool.slug, tool.id]));
+
   return NextResponse.json({
-    items: items.map((item: {
-      id: string;
-      kind: string;
-      slug: string;
-      name: string;
-      category: string;
-      priceLabel: string;
-      thumbnail: string | null;
-    }) => ({
-      id: item.id,
+    items: items.map((item) => ({
+      // For tool checkout the id must be the StartupTool id, not the
+      // ShoppingCartItem id. The latter is only a cart-row identifier.
+      id: item.kind === "TOOL" ? toolIdsBySlug.get(item.slug) ?? null : item.id,
       kind: item.kind,
       slug: item.slug,
       name: item.name,
