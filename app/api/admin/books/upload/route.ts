@@ -110,30 +110,32 @@ export async function POST(request: NextRequest) {
   }
 
   let coverImagePath: string | null = existingBook?.coverImage ?? null;
+  let uploadedCoverRef: string | null = null;
   if (coverImageFile instanceof File) {
     if (!coverImageFile.type.startsWith("image/")) return NextResponse.json({ error: "Cover image must be an image file." }, { status: 400 });
     if (coverImageFile.size > MAX_IMAGE_SIZE_BYTES) return NextResponse.json({ error: "Cover image must be smaller than 5MB." }, { status: 400 });
-    const coverFilename = `${randomUUID()}${coverImageFile.name ? `.${coverImageFile.name.split('.').pop()}` : ".jpg"}`;
+    const coverFilename = `${randomUUID()}.${extensionFor(coverImageFile, "jpg")}`;
     const coverBuffer = Buffer.from(await coverImageFile.arrayBuffer());
     const coverUpload = await uploadBookFile(coverFilename, coverBuffer, coverImageFile.type, "covers");
     coverImagePath = coverUpload.ref;
-    if (existingBook?.coverImage && existingBook.coverImage !== coverImagePath) await deleteBookFile(existingBook.coverImage);
+    uploadedCoverRef = coverUpload.ref;
   }
 
   let pdfRef = existingBook?.path ?? null;
   let pdfFilename = existingBook?.filename ?? null;
   let pdfSize = existingBook?.size ?? 0;
   let storageMode: string | null = null;
+  let uploadedPdfRef: string | null = null;
 
   if (pdfFile instanceof File) {
     const filename = `${randomUUID()}.pdf`;
     const fileBuffer = Buffer.from(await pdfFile.arrayBuffer());
     const fileUpload = await uploadBookFile(filename, fileBuffer, "application/pdf");
     pdfRef = fileUpload.ref;
+    uploadedPdfRef = fileUpload.ref;
     storageMode = fileUpload.storageMode;
     pdfFilename = filename;
     pdfSize = fileBuffer.length;
-    if (existingBook?.path && existingBook.path !== pdfRef) await deleteBookFile(existingBook.path);
   }
 
   const data = {
@@ -182,10 +184,18 @@ export async function POST(request: NextRequest) {
       return saved;
     });
 
-    await Promise.all(removedImages.map((image) => deleteBookFile(image.imageUrl).catch(() => undefined)));
+    const staleRefs = [
+      existingBook?.coverImage && existingBook.coverImage !== coverImagePath ? existingBook.coverImage : null,
+      existingBook?.path && existingBook.path !== pdfRef ? existingBook.path : null,
+      ...removedImages.map((image) => image.imageUrl),
+    ].filter((ref): ref is string => Boolean(ref));
+
+    await Promise.all(staleRefs.map((ref) => deleteBookFile(ref).catch(() => undefined)));
+
     return NextResponse.json({ id: book.id, title: book.title, isFree: book.isFree, price: book.price != null ? Number(book.price) : null, currency: book.currency, imageCount: galleryPlan ? galleryPlan.length : currentImages.length, storageMode });
   } catch (error) {
-    await Promise.all(Array.from(uploadedPreviewRefs.values()).map((ref) => deleteBookFile(ref).catch(() => undefined)));
+    const uploadedRefs = [uploadedCoverRef, uploadedPdfRef, ...Array.from(uploadedPreviewRefs.values())].filter((ref): ref is string => Boolean(ref));
+    await Promise.all(uploadedRefs.map((ref) => deleteBookFile(ref).catch(() => undefined)));
     console.error("Failed to save book:", error);
     return NextResponse.json({ error: "Failed to save the book. No changes were applied." }, { status: 500 });
   }
