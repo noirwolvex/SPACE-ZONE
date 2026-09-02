@@ -6,6 +6,15 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
+const PROFILE_FIELD_LIMITS = {
+  name: 120,
+  username: 60,
+  phone: 40,
+  country: 80,
+  city: 80,
+  bio: 1000,
+} as const;
+
 function createRequestSupabase(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +34,15 @@ function createRequestSupabase(cookieStore: Awaited<ReturnType<typeof cookies>>)
   );
 }
 
+function optionalText(value: unknown, maxLength: number, field: string) {
+  if (value == null) return { value: undefined as string | null | undefined };
+  if (typeof value !== "string") return { error: `${field} must be text.` };
+
+  const normalized = value.trim();
+  if (normalized.length > maxLength) return { error: `${field} must be ${maxLength} characters or fewer.` };
+  return { value: normalized || null };
+}
+
 export async function PUT(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createRequestSupabase(cookieStore);
@@ -34,21 +52,39 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid profile payload." }, { status: 400 });
+  }
+
   const profile = await prisma.customer.findFirst({ where: { supabaseId: user.id } });
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
+  const parsedFields = {
+    name: optionalText((body as Record<string, unknown>).name, PROFILE_FIELD_LIMITS.name, "Name"),
+    username: optionalText((body as Record<string, unknown>).username, PROFILE_FIELD_LIMITS.username, "Username"),
+    phone: optionalText((body as Record<string, unknown>).phone, PROFILE_FIELD_LIMITS.phone, "Phone"),
+    country: optionalText((body as Record<string, unknown>).country, PROFILE_FIELD_LIMITS.country, "Country"),
+    city: optionalText((body as Record<string, unknown>).city, PROFILE_FIELD_LIMITS.city, "City"),
+    bio: optionalText((body as Record<string, unknown>).bio, PROFILE_FIELD_LIMITS.bio, "Bio"),
+  };
+
+  const validationError = Object.values(parsedFields).find((field) => "error" in field)?.error;
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+
   const updated = await prisma.customer.update({
     where: { id: profile.id },
     data: {
-      name: body.name ?? profile.name,
-      username: body.username ?? profile.username,
-      phone: body.phone ?? profile.phone,
-      country: body.country ?? profile.country,
-      city: body.city ?? profile.city,
-      bio: body.bio ?? profile.bio,
+      name: "value" in parsedFields.name ? parsedFields.name.value : profile.name,
+      username: "value" in parsedFields.username ? parsedFields.username.value : profile.username,
+      phone: "value" in parsedFields.phone ? parsedFields.phone.value : profile.phone,
+      country: "value" in parsedFields.country ? parsedFields.country.value : profile.country,
+      city: "value" in parsedFields.city ? parsedFields.city.value : profile.city,
+      bio: "value" in parsedFields.bio ? parsedFields.bio.value : profile.bio,
     },
   });
 
@@ -66,13 +102,13 @@ export async function DELETE(_request: NextRequest) {
 
   const profile = await prisma.customer.findFirst({ where: { supabaseId: user.id } });
   if (!profile) {
-    await supabaseAdmin.auth.admin.deleteUser(user.id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+    if (deleteError) {
+      return NextResponse.json({ error: "Unable to delete the account right now. Please try again later." }, { status: 502 });
+    }
     return NextResponse.json({ ok: true });
   }
 
-  // Preserve historical orders/payments while removing the account identity.
-  // Deleting Customer directly would violate the existing foreign keys for users
-  // who have purchases, so the profile is anonymized instead of destroying history.
   const anonymizedEmail = `deleted+${profile.id}@users.spacezone.invalid`;
 
   await prisma.$transaction(async (tx) => {
@@ -98,8 +134,6 @@ export async function DELETE(_request: NextRequest) {
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
     if (deleteError) throw deleteError;
   } catch (deleteError) {
-    // Restore the profile so a failed Auth deletion does not strand the user in
-    // an anonymized state while still retaining an active Supabase account.
     try {
       await prisma.customer.update({
         where: { id: profile.id },
