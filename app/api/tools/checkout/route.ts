@@ -7,6 +7,8 @@ import { createTapCharge, isTapConfigured } from "@/lib/payments/tap";
 
 const MAX_ITEMS_PER_CHECKOUT = 20;
 
+type CheckoutItem = { toolId?: unknown };
+
 export async function POST(request: NextRequest) {
   const authCarrier = NextResponse.next();
   const json = (body: unknown, init?: ResponseInit) =>
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
     return json({ error: "Invalid checkout payload." }, { status: 400 });
   }
 
-  const items = Array.isArray(body.items) ? body.items : [];
+  const items: unknown[] = Array.isArray(body.items) ? body.items : [];
 
   if (!items.length) {
     return json({ error: "Cart is empty." }, { status: 400 });
@@ -40,12 +42,16 @@ export async function POST(request: NextRequest) {
     return json({ error: "Unable to resolve your customer profile." }, { status: 403 });
   }
 
-  const requestedToolIds = items.map((rawItem: unknown) =>
-    rawItem && typeof rawItem === "object" && typeof (rawItem as { toolId?: unknown }).toolId === "string"
-      ? (rawItem as { toolId: string }).toolId
-      : null
+  const getToolId = (rawItem: unknown): string | null => {
+    if (!rawItem || typeof rawItem !== "object") return null;
+    const toolId = (rawItem as CheckoutItem).toolId;
+    return typeof toolId === "string" && toolId.trim() ? toolId.trim() : null;
+  };
+
+  const requestedToolIds: Array<string | null> = items.map(getToolId);
+  const validRequestedToolIds: string[] = requestedToolIds.filter(
+    (id): id is string => id !== null
   );
-  const validRequestedToolIds = requestedToolIds.filter((id): id is string => Boolean(id));
 
   if (new Set(validRequestedToolIds).size !== validRequestedToolIds.length) {
     return json({ error: "A tool can only be included once per checkout." }, { status: 400 });
@@ -61,10 +67,7 @@ export async function POST(request: NextRequest) {
   const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
 
   const normalizedItems = items.map((rawItem: unknown) => {
-    const toolId = rawItem && typeof rawItem === "object" && typeof (rawItem as { toolId?: unknown }).toolId === "string"
-      ? (rawItem as { toolId: string }).toolId
-      : null;
-
+    const toolId = getToolId(rawItem);
     if (!toolId) return null;
 
     const tool = toolsById.get(toolId);
@@ -79,7 +82,11 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  const validItems = normalizedItems.filter(Boolean) as Array<{ toolId: string; price: number; quantity: number }>;
+  const validItems = normalizedItems.filter(Boolean) as Array<{
+    toolId: string;
+    price: number;
+    quantity: number;
+  }>;
 
   if (validItems.length !== items.length) {
     return json({ error: "One or more selected tools are no longer available." }, { status: 400 });
