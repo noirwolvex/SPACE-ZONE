@@ -39,7 +39,7 @@ function iconForService(slug: string, name: string): Service["icon"] {
 
 function mapServiceRecord(
   record: {
-    id: string;
+    id?: string;
     slug: string;
     name: string;
     description: string;
@@ -48,7 +48,7 @@ function mapServiceRecord(
     bestFor: string | null;
     imageUrl?: string | null;
   },
-) {
+): EditableService {
   const fallback = getService(record.slug);
 
   return {
@@ -62,7 +62,17 @@ function mapServiceRecord(
     deliverables: linesToList(record.examples, fallback?.deliverables ?? ["Service deliverables"]),
     process: linesToList(record.workflow, fallback?.process ?? ["Plan the work", "Create the assets", "Prepare handoff"]),
     bestFor: linesToList(record.bestFor, fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"]),
-  } satisfies EditableService;
+  };
+}
+
+function mapFallbackService(slug: string): EditableService | undefined {
+  const fallback = getService(slug);
+  if (!fallback) return undefined;
+
+  return {
+    ...fallback,
+    image: null,
+  };
 }
 
 function mapToolRecord(record: {
@@ -101,7 +111,7 @@ export async function getEditableServices(): Promise<EditableService[]> {
     const records = await prisma.service.findMany({
       orderBy: { createdAt: "asc" },
     });
-    if (!records.length) return services;
+    if (!records.length) return services.map((service) => ({ ...service, image: null }));
 
     let imageByServiceId = new Map<string, string | null>();
     try {
@@ -119,21 +129,26 @@ export async function getEditableServices(): Promise<EditableService[]> {
     );
   } catch (error) {
     console.error("Service content lookup failed:", error);
-    return services;
+    return services.map((service) => ({ ...service, image: null }));
   }
 }
 
-export async function getEditableService(slug: string) {
+export async function getEditableService(slug: string): Promise<EditableService | undefined> {
   try {
     const record = await prisma.service.findUnique({
       where: { slug },
-      include: { media: { select: { imageUrl: true } } },
     });
     if (!record) return undefined;
-    return mapServiceRecord({ ...record, imageUrl: record.media?.imageUrl ?? null });
+
+    const media = await prisma.serviceMedia.findUnique({
+      where: { serviceId: record.id },
+      select: { imageUrl: true },
+    }).catch(() => null);
+
+    return mapServiceRecord({ ...record, imageUrl: media?.imageUrl ?? null });
   } catch (error) {
     console.error(`Service lookup failed for ${slug}:`, error);
-    return getService(slug);
+    return mapFallbackService(slug);
   }
 }
 
