@@ -7,11 +7,14 @@ const envSupabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseHostnames = Array.from(
   new Set([
     envSupabaseHostname,
-    "ukwjrawoquzoccgvpovw.supabase.co",
+    "ukwjrawoquzoccgvpov.supabase.co",
   ].filter(Boolean) as string[]),
 );
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
   images: {
     remotePatterns: supabaseHostnames.length
       ? supabaseHostnames.map((hostname) => ({
