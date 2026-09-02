@@ -65,9 +65,18 @@ const lazyPrismaClient = new Proxy(
           apply(_value, _thisArg, args) {
             return (async () => {
               const client = await getPrismaClient();
-              let value: any = client;
-              for (const key of path) value = value[key];
-              return value(...args);
+              let context: any = client;
+
+              for (let index = 0; index < path.length - 1; index += 1) {
+                context = context[path[index]];
+              }
+
+              const method = context[path[path.length - 1]];
+              if (typeof method !== "function") {
+                throw new TypeError(`Prisma property ${path.join(".")} is not callable`);
+              }
+
+              return method.apply(context, args);
             })();
           },
         });
