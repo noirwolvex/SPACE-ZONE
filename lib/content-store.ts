@@ -127,15 +127,10 @@ export async function getEditableService(slug: string) {
   try {
     const record = await prisma.service.findUnique({
       where: { slug },
+      include: { media: { select: { imageUrl: true } } },
     });
     if (!record) return undefined;
-
-    const media = await prisma.serviceMedia.findUnique({
-      where: { serviceId: record.id },
-      select: { imageUrl: true },
-    }).catch(() => null);
-
-    return mapServiceRecord({ ...record, imageUrl: media?.imageUrl ?? null });
+    return mapServiceRecord({ ...record, imageUrl: record.media?.imageUrl ?? null });
   } catch (error) {
     console.error(`Service lookup failed for ${slug}:`, error);
     return getService(slug);
