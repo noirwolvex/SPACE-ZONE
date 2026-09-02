@@ -7,12 +7,13 @@ import { startupTools } from "@/lib/startup-tools";
 
 async function getCategoryId(name: string) {
   const categoryName = name.trim() || "SaaS";
+  const slug = slugify(categoryName) || "saas";
   const category = await prisma.toolCategory.upsert({
-    where: { slug: slugify(categoryName) },
+    where: { slug },
     update: { name: categoryName },
     create: {
       name: categoryName,
-      slug: slugify(categoryName),
+      slug,
     },
   });
 
@@ -65,7 +66,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const name = String(body.name ?? "").trim();
     const summary = String(body.summary ?? "").trim();
+    const description = String(body.description ?? summary).trim();
     const thumbnail = String(body.thumbnail ?? "").trim();
+    const slug = slugify(String(body.slug ?? name));
+    const rawPrice = Number(body.price ?? 0);
 
     if (!name || !summary) {
       return NextResponse.json({ error: "Name and summary are required." }, { status: 400 });
@@ -75,7 +79,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Thumbnail image is required." }, { status: 400 });
     }
 
-    const slug = slugify(String(body.slug ?? name));
+    if (!slug) {
+      return NextResponse.json({ error: "A valid tool slug is required." }, { status: 400 });
+    }
+
+    if (!Number.isFinite(rawPrice) || rawPrice < 0) {
+      return NextResponse.json({ error: "Price must be a valid non-negative number." }, { status: 400 });
+    }
+
     const categoryId = await getCategoryId(String(body.category ?? "SaaS"));
 
     const tool = await prisma.startupTool.create({
@@ -83,8 +94,8 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         summary,
-        description: String(body.description ?? summary).trim(),
-        price: Number(body.price ?? 0),
+        description: description || summary,
+        price: rawPrice,
         thumbnail,
         benefits: lines(body.benefits),
         includedFiles: lines(body.includedFiles),
@@ -98,7 +109,8 @@ export async function POST(request: NextRequest) {
     revalidatePath(`/tools/${tool.slug}`);
 
     return NextResponse.json(tool, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("Unable to save tool:", error);
     return NextResponse.json({ error: "Unable to save tool." }, { status: 500 });
   }
 }
