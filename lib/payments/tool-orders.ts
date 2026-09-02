@@ -1,7 +1,8 @@
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 
 export function generateToolOrderNo() {
-  return `TOOL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  return `TOOL-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
 const TOOL_CURRENCY = "BHD";
@@ -38,9 +39,41 @@ export async function createPendingToolOrder(params: {
     throw new Error("Tool quantity must be exactly 1.");
   }
 
+  const orderedToolIds = [...toolIds].sort();
+  const requestedItems = params.items.map((item) => ({
+    toolId: item.toolId,
+    price: money(Number(item.price)),
+  }));
+
+  // Reuse the newest matching pending order for this customer's exact set of tools.
+  // This protects against duplicate clicks/retries without trusting client prices.
+  const pendingOrders = await prisma.order.findMany({
+    where: { customerId: params.customerId, status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: { items: { select: { toolId: true, price: true } } },
+  });
+
+  for (const pending of pendingOrders) {
+    const pendingItems = pending.items
+      .map((item) => ({ toolId: item.toolId, price: money(Number(item.price)) }))
+      .sort((a, b) => a.toolId.localeCompare(b.toolId));
+
+    if (
+      pendingItems.length === requestedItems.length &&
+      pendingItems.every(
+        (item, index) =>
+          item.toolId === orderedToolIds[index] &&
+          amountsMatch(item.price, requestedItems.find((requested) => requested.toolId === item.toolId)?.price ?? -1),
+      )
+    ) {
+      return pending;
+    }
+  }
+
   const total = money(params.items.reduce((sum, item) => sum + Number(item.price), 0));
 
-  const order = await prisma.order.create({
+  return prisma.order.create({
     data: {
       orderNo: generateToolOrderNo(),
       customerId: params.customerId,
@@ -54,20 +87,20 @@ export async function createPendingToolOrder(params: {
       },
     },
     include: { items: true },
-  });
+  }).then(async (order) => {
+    await prisma.payment.upsert({
+      where: { orderId: order.id },
+      update: { amount: total, status: "PENDING", tapChargeId: null },
+      create: {
+        orderId: order.id,
+        amount: total,
+        status: "PENDING",
+        tapChargeId: null,
+      },
+    });
 
-  await prisma.payment.upsert({
-    where: { orderId: order.id },
-    update: { amount: total, status: "PENDING", tapChargeId: null },
-    create: {
-      orderId: order.id,
-      amount: total,
-      status: "PENDING",
-      tapChargeId: null,
-    },
+    return order;
   });
-
-  return order;
 }
 
 export type ToolOrderFulfilmentResult =
@@ -93,7 +126,7 @@ export async function fulfilToolOrder(params: {
 
       if (order.status === "PAID") {
         if (!order.payment) {
-          await tx.payment.create({
+          const payment = await tx.payment.create({
             data: {
               orderId: order.id,
               amount: money(Number(order.total)),
@@ -101,8 +134,9 @@ export async function fulfilToolOrder(params: {
               tapChargeId: params.tapChargeId ?? null,
             },
           });
+          return { ok: true, alreadyPaid: true, paymentId: payment.id };
         }
-        return { ok: true, alreadyPaid: true, paymentId: order.payment?.id ?? order.id };
+        return { ok: true, alreadyPaid: true, paymentId: order.payment.id };
       }
 
       const total = money(Number(order.total));
