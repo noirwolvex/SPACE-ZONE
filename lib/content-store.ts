@@ -37,6 +37,65 @@ function iconForService(slug: string, name: string): Service["icon"] {
   return "sparkles";
 }
 
+function mapServiceRecord(
+  record: {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    examples: string | null;
+    workflow: string | null;
+    bestFor: string | null;
+    imageUrl?: string | null;
+  },
+) {
+  const fallback = getService(record.slug);
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    name: record.name,
+    summary: record.description,
+    description: fallback?.description ?? record.description,
+    icon: fallback?.icon ?? iconForService(record.slug, record.name),
+    image: record.imageUrl ?? null,
+    deliverables: linesToList(record.examples, fallback?.deliverables ?? ["Service deliverables"]),
+    process: linesToList(record.workflow, fallback?.process ?? ["Plan the work", "Create the assets", "Prepare handoff"]),
+    bestFor: linesToList(record.bestFor, fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"]),
+  } satisfies EditableService;
+}
+
+function mapToolRecord(record: {
+  id: string;
+  slug: string;
+  name: string;
+  summary: string;
+  description: string;
+  price: number;
+  thumbnail: string | null;
+  benefits: string[];
+  includedFiles: string[];
+  bestFor: string[];
+  category: { name: string };
+}) {
+  const fallback = getStartupTool(record.slug);
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    name: record.name,
+    summary: record.summary,
+    description: record.description,
+    price: record.price,
+    priceLabel: fallback?.priceLabel ?? `$${record.price}`,
+    category: record.category.name,
+    thumbnail: record.thumbnail ?? fallback?.thumbnail ?? "/tools/startup-launch-kit.png",
+    benefits: record.benefits.length ? record.benefits : fallback?.benefits ?? ["Clearer launch workflow"],
+    includedFiles: record.includedFiles.length ? record.includedFiles : fallback?.includedFiles ?? ["Product resources"],
+    bestFor: record.bestFor.length ? record.bestFor : fallback?.bestFor ?? ["Founders", "Marketing teams", "Small agencies"],
+  } satisfies EditableStartupTool;
+}
+
 export async function getEditableServices(): Promise<EditableService[]> {
   try {
     const records = await prisma.service.findMany({
@@ -55,22 +114,9 @@ export async function getEditableServices(): Promise<EditableService[]> {
       console.warn("Service media lookup failed; continuing without images:", mediaError);
     }
 
-    return records.map((record) => {
-      const fallback = getService(record.slug);
-
-      return {
-        id: record.id,
-        slug: record.slug,
-        name: record.name,
-        summary: record.description,
-        description: fallback?.description ?? record.description,
-        icon: fallback?.icon ?? iconForService(record.slug, record.name),
-        image: imageByServiceId.get(record.id) ?? null,
-        deliverables: linesToList(record.examples, fallback?.deliverables ?? ["Service deliverables"]),
-        process: linesToList(record.workflow, fallback?.process ?? ["Plan the work", "Create the assets", "Prepare handoff"]),
-        bestFor: linesToList(record.bestFor, fallback?.bestFor ?? ["Businesses", "Founders", "Marketing teams"]),
-      };
-    });
+    return records.map((record) =>
+      mapServiceRecord({ ...record, imageUrl: imageByServiceId.get(record.id) ?? null }),
+    );
   } catch (error) {
     console.error("Service content lookup failed:", error);
     return services;
@@ -78,8 +124,22 @@ export async function getEditableServices(): Promise<EditableService[]> {
 }
 
 export async function getEditableService(slug: string) {
-  const allServices = await getEditableServices();
-  return allServices.find((service) => service.slug === slug);
+  try {
+    const record = await prisma.service.findUnique({
+      where: { slug },
+    });
+    if (!record) return undefined;
+
+    const media = await prisma.serviceMedia.findUnique({
+      where: { serviceId: record.id },
+      select: { imageUrl: true },
+    }).catch(() => null);
+
+    return mapServiceRecord({ ...record, imageUrl: media?.imageUrl ?? null });
+  } catch (error) {
+    console.error(`Service lookup failed for ${slug}:`, error);
+    return getService(slug);
+  }
 }
 
 export async function getEditableStartupTools(): Promise<EditableStartupTool[]> {
@@ -90,25 +150,7 @@ export async function getEditableStartupTools(): Promise<EditableStartupTool[]> 
     });
 
     if (!records.length) return startupTools;
-
-    return records.map((record) => {
-      const fallback = getStartupTool(record.slug);
-
-      return {
-        id: record.id,
-        slug: record.slug,
-        name: record.name,
-        summary: record.summary,
-        description: record.description,
-        price: record.price,
-        priceLabel: fallback?.priceLabel ?? `$${record.price}`,
-        category: record.category.name,
-        thumbnail: record.thumbnail ?? fallback?.thumbnail ?? "/tools/startup-launch-kit.png",
-        benefits: record.benefits.length ? record.benefits : fallback?.benefits ?? ["Clearer launch workflow"],
-        includedFiles: record.includedFiles.length ? record.includedFiles : fallback?.includedFiles ?? ["Product resources"],
-        bestFor: record.bestFor.length ? record.bestFor : fallback?.bestFor ?? ["Founders", "Marketing teams", "Small agencies"],
-      };
-    });
+    return records.map(mapToolRecord);
   } catch (error) {
     console.error("Startup tools content lookup failed:", error);
     return startupTools;
@@ -116,6 +158,15 @@ export async function getEditableStartupTools(): Promise<EditableStartupTool[]> 
 }
 
 export async function getEditableStartupTool(slug: string) {
-  const allTools = await getEditableStartupTools();
-  return allTools.find((tool) => tool.slug === slug);
+  try {
+    const record = await prisma.startupTool.findUnique({
+      where: { slug },
+      include: { category: true },
+    });
+    if (!record) return undefined;
+    return mapToolRecord(record);
+  } catch (error) {
+    console.error(`Startup tool lookup failed for ${slug}:`, error);
+    return getStartupTool(slug);
+  }
 }
