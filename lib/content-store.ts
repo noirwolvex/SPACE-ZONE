@@ -81,7 +81,7 @@ function mapToolRecord(record: {
   name: string;
   summary: string;
   description: string;
-  price: number;
+  price: number | { toString(): string };
   thumbnail: string | null;
   benefits: string[];
   includedFiles: string[];
@@ -96,8 +96,8 @@ function mapToolRecord(record: {
     name: record.name,
     summary: record.summary,
     description: record.description,
-    price: record.price,
-    priceLabel: fallback?.priceLabel ?? `$${record.price}`,
+    price: Number(record.price),
+    priceLabel: fallback?.priceLabel ?? `$${Number(record.price)}`,
     category: record.category.name,
     thumbnail: record.thumbnail ?? fallback?.thumbnail ?? "/tools/startup-launch-kit.png",
     benefits: record.benefits.length ? record.benefits : fallback?.benefits ?? ["Clearer launch workflow"],
