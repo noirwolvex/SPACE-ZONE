@@ -190,14 +190,18 @@ model Download {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  message   String
-  status    String   @default("UNREAD")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  contactType    String   @default("Inquiry")
+  message        String
+  details        String?
+  attachmentUrl  String?
+  attachmentName String?
+  status         String   @default("UNREAD")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model SeoMetadata {
@@ -231,7 +235,7 @@ model Book {
   features       String?
   targetAudience String?
   bookSize       String?
-  pageCount      Int?
+  pageCount     Int?
   seriesParts    String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -268,7 +272,7 @@ model PurchasedBook {
   currency      String
   purchasedAt   DateTime @default(now())
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  updatedAt     DateTime @updatedAt
   source        String   @default("PAYMENT")
   status        String   @default("COMPLETED")
   transactionId String?
