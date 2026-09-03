@@ -112,6 +112,8 @@ model StartupTool {
   orderItems    OrderItem[]
   category      ToolCategory   @relation(fields: [categoryId], references: [id])
   seoMetadata   SeoMetadata?   @relation(fields: [seoId], references: [id])
+
+  @@index([categoryId])
 }
 
 model Order {
@@ -125,6 +127,8 @@ model Order {
   customer   Customer      @relation(fields: [customerId], references: [id])
   items      OrderItem[]
   payment    Payment?
+
+  @@index([customerId])
 }
 
 model ShoppingCartItem {
@@ -155,6 +159,9 @@ model OrderItem {
   downloads Download[]
   order     Order       @relation(fields: [orderId], references: [id])
   tool      StartupTool @relation(fields: [toolId], references: [id])
+
+  @@index([orderId])
+  @@index([toolId])
 }
 
 model Payment {
@@ -176,6 +183,8 @@ model Download {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@index([orderItemId])
 }
 
 model ContactMessage {
@@ -269,6 +278,7 @@ model PurchasedBook {
 
   @@unique([customerId, bookId])
   @@index([customerId, status])
+  @@index([bookId])
   @@index([transactionId])
 }
 
@@ -291,6 +301,7 @@ model BookOrder {
   purchase PurchasedBook?
 
   @@index([customerId, bookId])
+  @@index([bookId])
   @@index([status])
   @@unique([customerId, bookId], where: raw("(status = 'PENDING')"), name: "BookOrder_pending_customer_book_key")
 }
@@ -339,6 +350,4 @@ model RateLimitCounter {
   count       Int      @default(0)
   resetAt     DateTime
   updatedAt   DateTime @updatedAt
-
-  @@index([resetAt])
 }
