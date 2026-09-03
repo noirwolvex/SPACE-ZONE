@@ -38,9 +38,12 @@ export async function POST(request: NextRequest, { params }: Props) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-180) || `file-${randomUUID()}`;
   const filename = `${randomUUID()}-${safeName}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+  let uploadedRef: string | null = null;
 
   try {
     const upload = await uploadStartupToolFile(filename, buffer, file.type || "application/octet-stream");
+    uploadedRef = upload.ref;
+
     const saved = await prisma.$transaction(async (tx) => {
       const sortOrder = await tx.startupToolFile.count({ where: { toolId: id } });
       const created = await tx.startupToolFile.create({
@@ -55,10 +58,7 @@ export async function POST(request: NextRequest, { params }: Props) {
       });
 
       const paidItems = await tx.orderItem.findMany({
-        where: {
-          toolId: id,
-          order: { status: "PAID" },
-        },
+        where: { toolId: id, order: { status: "PAID" } },
         select: { id: true },
       });
 
@@ -67,15 +67,11 @@ export async function POST(request: NextRequest, { params }: Props) {
           where: { orderItemId: item.id, fileId: created.id },
           select: { id: true },
         });
-        if (existingDownload) continue;
-
-        await tx.download.create({
-          data: {
-            orderItemId: item.id,
-            fileId: created.id,
-            token: randomUUID(),
-          },
-        });
+        if (!existingDownload) {
+          await tx.download.create({
+            data: { orderItemId: item.id, fileId: created.id, token: randomUUID() },
+          });
+        }
       }
 
       return created;
@@ -83,22 +79,10 @@ export async function POST(request: NextRequest, { params }: Props) {
 
     return NextResponse.json({ ...saved, storageMode: upload.storageMode }, { status: 201 });
   } catch (error) {
-    try {
-      await deleteStartupToolFile(uploadStartupRef(uploadErrorRef(error))).catch(() => undefined);
-    } catch {
-      // The upload reference is intentionally best-effort on error; avoid masking the original failure.
-    }
+    if (uploadedRef) await deleteStartupToolFile(uploadedRef).catch(() => undefined);
     console.error("Startup tool file upload failed:", error);
     return NextResponse.json({ error: "Unable to upload tool file." }, { status: 500 });
   }
-}
-
-function uploadStartupRef(_value: unknown): string {
-  return "";
-}
-
-function uploadErrorRef(_error: unknown): string {
-  return "";
 }
 
 export async function DELETE(request: NextRequest, { params }: Props) {
