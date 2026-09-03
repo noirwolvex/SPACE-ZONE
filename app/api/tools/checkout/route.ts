@@ -7,7 +7,7 @@ import { createTapCharge, isTapConfigured } from "@/lib/payments/tap";
 
 const MAX_ITEMS_PER_CHECKOUT = 20;
 
-type CheckoutItem = { toolId?: unknown };
+type CheckoutItem = { toolId?: unknown; slug?: unknown };
 
 export async function POST(request: NextRequest) {
   const authCarrier = NextResponse.next();
@@ -42,35 +42,52 @@ export async function POST(request: NextRequest) {
     return json({ error: "Unable to resolve your customer profile." }, { status: 403 });
   }
 
-  const getToolId = (rawItem: unknown): string | null => {
+  const getToolSelector = (rawItem: unknown): string | null => {
     if (!rawItem || typeof rawItem !== "object") return null;
-    const toolId = (rawItem as CheckoutItem).toolId;
-    return typeof toolId === "string" && toolId.trim() ? toolId.trim() : null;
+    const item = rawItem as CheckoutItem;
+
+    const toolId = typeof item.toolId === "string" ? item.toolId.trim() : "";
+    if (toolId) return toolId;
+
+    const slug = typeof item.slug === "string" ? item.slug.trim() : "";
+    return slug || null;
   };
 
-  const requestedToolIds: Array<string | null> = items.map(getToolId);
-  const validRequestedToolIds: string[] = requestedToolIds.filter(
-    (id): id is string => id !== null
+  const requestedSelectors = items.map(getToolSelector);
+  const validSelectors: string[] = requestedSelectors.filter(
+    (selector): selector is string => selector !== null
   );
 
-  if (new Set(validRequestedToolIds).size !== validRequestedToolIds.length) {
+  if (validSelectors.length !== items.length) {
+    return json({ error: "Each checkout item must include a valid tool id or slug." }, { status: 400 });
+  }
+
+  if (new Set(validSelectors).size !== validSelectors.length) {
     return json({ error: "A tool can only be included once per checkout." }, { status: 400 });
   }
 
-  const tools = validRequestedToolIds.length
+  const tools = validSelectors.length
     ? await prisma.startupTool.findMany({
-        where: { id: { in: validRequestedToolIds } },
-        select: { id: true, price: true },
+        where: {
+          OR: [
+            { id: { in: validSelectors } },
+            { slug: { in: validSelectors } },
+          ],
+        },
+        select: { id: true, slug: true, price: true },
       })
     : [];
 
-  const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
+  const toolsBySelector = new Map<string, (typeof tools)[number]>();
+  for (const tool of tools) {
+    toolsBySelector.set(tool.id, tool);
+    toolsBySelector.set(tool.slug, tool);
+  }
 
-  const normalizedItems = items.map((rawItem: unknown) => {
-    const toolId = getToolId(rawItem);
-    if (!toolId) return null;
+  const normalizedItems = requestedSelectors.map((selector) => {
+    if (!selector) return null;
 
-    const tool = toolsById.get(toolId);
+    const tool = toolsBySelector.get(selector);
     if (!tool || !Number.isFinite(Number(tool.price)) || Number(tool.price) <= 0) {
       return null;
     }
