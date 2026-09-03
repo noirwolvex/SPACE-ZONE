@@ -7,12 +7,10 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Your dashboard</h1>
         <p className="mt-3 text-slate-600 dark:text-slate-300">This area is protected and only visible to authenticated users.</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Link href="/library" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">
-            My library
-          </Link>
-          <Link href="/purchased-books" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">
-            Purchased books
-          </Link>
+          <Link href="/library" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">My library</Link>
+          <Link href="/purchased-books" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">Purchased books</Link>
+          <Link href="/purchased-tools" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">Purchased tools</Link>
+          <Link href="/purchased-websites" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:bg-slate-800">Purchased websites</Link>
         </div>
       </div>
     </div>
