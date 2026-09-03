@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Space Zone Media
 
-## Getting Started
+Space Zone Media is a Next.js 16 application for a corporate media site and digital marketplace. The platform combines editable services, startup tools, websites, portfolio work, educational books, customer accounts, admin management, AI chat, and Tap Payments.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 / React 19 / TypeScript
+- Supabase Auth and Storage
+- PostgreSQL through Prisma 7
+- Tap Payments
+- Gemini AI through a server-side API route
+- OpenNext for Cloudflare Workers
+- Tailwind CSS
+
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Quality checks:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run lint
+npm run typecheck
+npm test
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Production build:
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Environment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The application expects these server/runtime values where applicable:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `DATABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (optional)
+- `TAP_SECRET_KEY`
+- `TAP_WEBHOOK_SECRET` (optional legacy/shared webhook secret)
+- `PRISMA_POOL_MAX` (optional)
 
-## Deploy on Vercel
+Never commit `.env*`, service-role keys, payment secrets, or generated credentials.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Data and security
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Paid books are protected server-side and are released only after a verified payment webhook. Supabase-hosted protected files use short-lived signed URLs; local fallback files are streamed only through an authorized route.
+
+Admin authorization is based on the authenticated Supabase user linked to `Customer.role = ADMIN`. Legacy database admin credentials are no longer used.
+
+The application uses PostgreSQL-backed rate limiting for AI chat, contact submissions, and traffic ingestion so limits are shared across worker instances.
+
+## Database migrations
+
+Prisma migrations live under `prisma/migrations/`. Apply pending production migrations with:
+
+```bash
+npx prisma migrate deploy
+```
+
+The migration history includes the security hardening, decimal money fields, distributed rate-limit storage, and foreign-key indexes.
+
+## Cloudflare deployment
+
+The project uses OpenNext with `wrangler.jsonc` for Cloudflare deployment:
+
+```bash
+npm run preview
+npm run deploy
+```
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs linting, type checking, security regression tests, and the production build. Configure repository secrets for `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY` before relying on the build job.
