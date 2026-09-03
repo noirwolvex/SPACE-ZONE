@@ -29,18 +29,11 @@ export type EditableStartupTool = {
 };
 
 export function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function linesToList(value: string | null | undefined) {
-  return (value ?? "")
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  return (value ?? "").split("\n").map((item) => item.trim()).filter(Boolean);
 }
 
 function iconForService(slug: string, name: string): EditableService["icon"] {
@@ -49,6 +42,10 @@ function iconForService(slug: string, name: string): EditableService["icon"] {
   if (key.includes("seo") || key.includes("marketing")) return "rocket";
   if (key.includes("banner") || key.includes("store")) return "image";
   return "sparkles";
+}
+
+function formatPrice(price: number) {
+  return Number.isInteger(price) ? `$${price}` : `$${price.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")}`;
 }
 
 function mapServiceRecord(record: {
@@ -97,7 +94,7 @@ function mapToolRecord(record: {
     summary: record.summary,
     description: record.description,
     price,
-    priceLabel: `${price.toFixed(3).replace(/\.000$/, "").replace(/(\.\d)00$/, "$1").replace(/(\.\d\d)0$/, "$1")} BHD`,
+    priceLabel: formatPrice(price),
     category: record.category.name,
     thumbnail: record.thumbnail,
     benefits: record.benefits ?? [],
@@ -109,42 +106,24 @@ function mapToolRecord(record: {
 export async function getEditableServices(): Promise<EditableService[]> {
   const records = await prisma.service.findMany({ orderBy: { createdAt: "asc" } });
   if (!records.length) return [];
-
-  const mediaRows = await prisma.serviceMedia.findMany({
-    where: { serviceId: { in: records.map((record) => record.id) } },
-    select: { serviceId: true, imageUrl: true },
-  });
+  const mediaRows = await prisma.serviceMedia.findMany({ where: { serviceId: { in: records.map((record) => record.id) } }, select: { serviceId: true, imageUrl: true } });
   const imageByServiceId = new Map(mediaRows.map((row) => [row.serviceId, row.imageUrl]));
-
-  return records.map((record) =>
-    mapServiceRecord({ ...record, imageUrl: imageByServiceId.get(record.id) ?? null }),
-  );
+  return records.map((record) => mapServiceRecord({ ...record, imageUrl: imageByServiceId.get(record.id) ?? null }));
 }
 
 export async function getEditableService(slug: string): Promise<EditableService | undefined> {
   const record = await prisma.service.findUnique({ where: { slug } });
   if (!record) return undefined;
-
-  const media = await prisma.serviceMedia.findUnique({
-    where: { serviceId: record.id },
-    select: { imageUrl: true },
-  });
-
+  const media = await prisma.serviceMedia.findUnique({ where: { serviceId: record.id }, select: { imageUrl: true } });
   return mapServiceRecord({ ...record, imageUrl: media?.imageUrl ?? null });
 }
 
 export async function getEditableStartupTools(): Promise<EditableStartupTool[]> {
-  const records = await prisma.startupTool.findMany({
-    include: { category: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const records = await prisma.startupTool.findMany({ include: { category: true }, orderBy: { createdAt: "asc" } });
   return records.map(mapToolRecord);
 }
 
 export async function getEditableStartupTool(slug: string): Promise<EditableStartupTool | undefined> {
-  const record = await prisma.startupTool.findUnique({
-    where: { slug },
-    include: { category: true },
-  });
+  const record = await prisma.startupTool.findUnique({ where: { slug }, include: { category: true } });
   return record ? mapToolRecord(record) : undefined;
 }
