@@ -77,17 +77,6 @@ async function main() {
     });
   }
 
-  console.log('Seeding Admin...');
-  await prisma.admin.upsert({
-    where: { email: 'admin@spacezonemedia.com' },
-    update: {},
-    create: {
-      email: 'admin@spacezonemedia.com',
-      password: 'hashed_password_placeholder',
-      name: 'Super Admin',
-    },
-  });
-
   console.log('Database seeded successfully!');
 }
 
