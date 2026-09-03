@@ -13,6 +13,10 @@ export type CartItem = {
 export const CART_STORAGE_KEY = "spacezone-tools-cart";
 const CART_USER_ID_KEY = "spacezone-current-user-id";
 
+function isToolCartItem(item: CartItem) {
+  return (item.kind ?? "TOOL").toUpperCase() === "TOOL" && item.category.trim().toUpperCase() !== "BOOK";
+}
+
 export function getCartStorageKeyForUser(userId?: string | null): string {
   return userId ? `${CART_STORAGE_KEY}:user:${userId}` : `${CART_STORAGE_KEY}:guest`;
 }
@@ -41,14 +45,17 @@ export async function syncCartToSupabase(items: CartItem[]) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
+  const toolItems = items.filter(isToolCartItem);
+  if (!toolItems.length) return;
+
   try {
     await Promise.all(
-      items.map((item) =>
+      toolItems.map((item) =>
         fetch("/api/cart", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            kind: item.kind ?? "TOOL",
+            kind: "TOOL",
             slug: item.slug,
             name: item.name,
             category: item.category,
@@ -64,7 +71,7 @@ export async function syncCartToSupabase(items: CartItem[]) {
 }
 
 async function persistCartItemToSupabase(item: CartItem, mode: "create" | "delete") {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !isToolCartItem(item)) return;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -75,7 +82,7 @@ async function persistCartItemToSupabase(item: CartItem, mode: "create" | "delet
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          kind: item.kind ?? "TOOL",
+          kind: "TOOL",
           slug: item.slug,
           name: item.name,
           category: item.category,
@@ -86,7 +93,7 @@ async function persistCartItemToSupabase(item: CartItem, mode: "create" | "delet
       return;
     }
 
-    await fetch(`/api/cart?kind=${encodeURIComponent(item.kind ?? "TOOL")}&slug=${encodeURIComponent(item.slug)}`, {
+    await fetch(`/api/cart?kind=TOOL&slug=${encodeURIComponent(item.slug)}`, {
       method: "DELETE",
     });
   } catch {
@@ -102,8 +109,8 @@ export async function loadCartFromSupabase(): Promise<CartItem[]> {
     const data = await response.json();
     const apiItems = Array.isArray(data?.items) ? data.items : [];
 
-    if (apiItems.length) {
-      const mapped = apiItems.map((item: any) => ({
+    const mapped = apiItems
+      .map((item: any) => ({
         id: item.id,
         kind: item.kind,
         slug: item.slug,
@@ -111,17 +118,15 @@ export async function loadCartFromSupabase(): Promise<CartItem[]> {
         category: item.category,
         priceLabel: item.priceLabel,
         thumbnail: item.thumbnail ?? "",
-      }));
+      }))
+      .filter(isToolCartItem);
 
-      if (typeof window !== "undefined") {
-        const cartKey = getActiveCartStorageKey();
-        window.localStorage.setItem(cartKey, JSON.stringify(mapped));
-      }
-
-      return mapped;
+    if (typeof window !== "undefined") {
+      const cartKey = getActiveCartStorageKey();
+      window.localStorage.setItem(cartKey, JSON.stringify(mapped));
     }
 
-    return readToolCart();
+    return mapped;
   } catch {
     return readToolCart();
   }
@@ -152,7 +157,12 @@ export function readToolCart(): CartItem[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.filter(isCartItem);
+    const filtered = parsed.filter(isCartItem).filter(isToolCartItem);
+    if (filtered.length !== parsed.length) {
+      window.localStorage.setItem(key, JSON.stringify(filtered));
+    }
+
+    return filtered;
   } catch {
     return [];
   }
@@ -161,12 +171,15 @@ export function readToolCart(): CartItem[] {
 export function addToolToCart(item: CartItem): CartItem[] {
   if (typeof window === "undefined") return [item];
 
+  if (!isToolCartItem(item)) return readToolCart();
+
+  const normalizedItem = { ...item, kind: "TOOL" };
   const current = readToolCart();
-  const next = [item, ...current.filter((existing) => existing.slug !== item.slug)];
+  const next = [normalizedItem, ...current.filter((existing) => existing.slug !== item.slug)];
 
   const cartKey = getActiveCartStorageKey();
   window.localStorage.setItem(cartKey, JSON.stringify(next));
-  void persistCartItemToSupabase(item, "create");
+  void persistCartItemToSupabase(normalizedItem, "create");
   window.dispatchEvent(new CustomEvent("spacezone-cart-updated"));
 
   return next;
