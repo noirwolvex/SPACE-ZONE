@@ -16,16 +16,20 @@ async function main() {
       where: { slug: service.slug },
       update: {
         name: service.name,
-        description: service.summary,
+        summary: service.summary,
+        description: service.description,
         workflow: service.process.join('\n'),
         examples: service.deliverables.join('\n'),
+        bestFor: service.bestFor.join('\n'),
       },
       create: {
         name: service.name,
         slug: service.slug,
-        description: service.summary,
+        summary: service.summary,
+        description: service.description,
         workflow: service.process.join('\n'),
         examples: service.deliverables.join('\n'),
+        bestFor: service.bestFor.join('\n'),
       },
     });
   }
