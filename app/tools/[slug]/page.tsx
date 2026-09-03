@@ -31,6 +31,8 @@ export default async function ToolDetail({ params }: ToolDetailProps) {
 
   const screenshots = Array.from(new Set(tool.screenshots.filter(Boolean)));
   const faqs = parseFaqs(tool.faqs);
+  const priceLabel = tool.priceLabel ?? `$${tool.price}`;
+  const thumbnail = tool.thumbnail ?? "";
 
   return (
     <main className="flex-1 bg-slate-50 pt-24 pb-16 text-slate-900 transition-colors dark:bg-[#050505] dark:text-white">
@@ -44,12 +46,12 @@ export default async function ToolDetail({ params }: ToolDetailProps) {
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-3">
               <span className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-900/30 dark:text-indigo-300">{tool.category}</span>
-              <span className="text-sm font-semibold text-slate-500 dark:text-slate-300">{tool.priceLabel}</span>
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-300">{priceLabel}</span>
             </div>
             <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white md:text-6xl">{tool.name}</h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">{tool.summary}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <AddToCartButton tool={{ slug: tool.slug, name: tool.name, category: tool.category, priceLabel: tool.priceLabel, thumbnail: tool.thumbnail }} />
+              <AddToCartButton tool={{ slug: tool.slug, name: tool.name, category: tool.category, priceLabel, thumbnail }} />
               <Link href="/contact" className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 dark:border-indigo-500/30 dark:bg-[#0a0f1e] dark:text-slate-200 dark:hover:bg-indigo-950/40">Ask a Question</Link>
             </div>
           </div>
