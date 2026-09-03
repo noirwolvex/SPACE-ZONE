@@ -8,20 +8,33 @@ export async function POST(request: NextRequest) {
   if (!admin.ok) return admin.response;
 
   try {
-    const body = await request.json();
-    const id = body?.id;
+    const body = await request.json().catch(() => null);
+    const id = typeof body?.id === "string" ? body.id.trim() : "";
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
     const existing = await prisma.website.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (existing.image) {
-      await deleteWebsiteFile(existing.image);
-    }
+    const filePaths = Array.from(
+      new Set([existing.image, ...(existing.gallery ?? [])].filter(Boolean))
+    ) as string[];
 
     await prisma.website.delete({ where: { id } });
+
+    const cleanupResults = await Promise.allSettled(
+      filePaths.map((filePath) => deleteWebsiteFile(filePath))
+    );
+
+    const cleanupFailures = cleanupResults.filter((result) => result.status === "rejected");
+    if (cleanupFailures.length) {
+      console.error(
+        `Website ${existing.slug} was deleted, but ${cleanupFailures.length} storage file(s) could not be removed.`
+      );
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("Website delete failed:", err);
+    return NextResponse.json({ error: "Failed to delete the website." }, { status: 500 });
   }
 }
