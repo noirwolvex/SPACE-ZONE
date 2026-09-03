@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureProfileForUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
+function isStrongPassword(password: string) {
+  return password.length >= 8 && /[A-Z]/.test(password) && /\d/.test(password);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -16,8 +20,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+    if (!isStrongPassword(password)) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters and include one uppercase letter and one number." },
+        { status: 400 },
+      );
     }
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -50,7 +57,7 @@ export async function POST(request: NextRequest) {
     console.error("Signup route error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to create account right now." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
