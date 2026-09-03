@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Check, Download, Info, Lock, ShieldCheck, ShoppingCart, Zap } from "lucide-react";
 import { formatBookPrice } from "@/lib/book-format";
-import { addToolToCart } from "@/lib/cart";
 
 interface BookPurchasePanelProps {
   bookId: string;
@@ -45,17 +44,6 @@ export default function BookPurchasePanel({
   const redirectTo = `/books/${bookId}`;
 
   const handleBuyNow = async () => {
-    const bookTitle = title || "Book";
-    const thumbnail = coverImageUrl || "/spacezone-logo.jfif";
-
-    addToolToCart({
-      slug: bookId,
-      name: bookTitle,
-      category: "Book",
-      priceLabel: formatBookPrice(price, currency),
-      thumbnail,
-    });
-
     if (!isSignedIn) {
       router.push(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
       return;
