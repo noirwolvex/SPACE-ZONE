@@ -28,7 +28,7 @@ export default async function ProfilePage() {
   const customer = profile ?? (await prisma.customer.findFirst({ where: { email: user.email ?? "" } }));
   if (!customer) return <ProfilePageClient user={user} profile={null} stats={{ books: 0, websites: 0, orders: 0 }} purchases={{ books: [], websites: [] }} />;
 
-  const [books, websites, orders] = await Promise.all([
+  const [books, websites, bookCount, websiteCount, orders] = await Promise.all([
     prisma.purchasedBook.findMany({
       where: { customerId: customer.id, status: "COMPLETED" },
       orderBy: { purchasedAt: "desc" }, take: 6,
@@ -39,6 +39,8 @@ export default async function ProfilePage() {
       orderBy: { purchasedAt: "desc" }, take: 6,
       include: { website: { select: { id: true, title: true, slug: true, image: true, websiteUrl: true } } },
     }),
+    prisma.purchasedBook.count({ where: { customerId: customer.id, status: "COMPLETED" } }),
+    prisma.websitePurchase.count({ where: { customerId: customer.id, status: "PAID" } }),
     prisma.order.count({ where: { customerId: customer.id } }),
   ]);
 
@@ -61,5 +63,5 @@ export default async function ProfilePage() {
 
   const profileData = { ...customer, createdAt: customer.createdAt.toISOString(), updatedAt: customer.updatedAt.toISOString() };
 
-  return <ProfilePageClient user={user} profile={profileData} stats={{ books: books.length, websites: websites.length, orders }} purchases={{ books: bookItems, websites: websiteItems }} />;
+  return <ProfilePageClient user={user} profile={profileData} stats={{ books: bookCount, websites: websiteCount, orders }} purchases={{ books: bookItems, websites: websiteItems }} />;
 }
