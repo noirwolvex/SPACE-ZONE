@@ -5,6 +5,7 @@ const protectedPaths = [
   "/dashboard",
   "/library",
   "/purchased-books",
+  "/purchased-tools",
   "/purchased-websites",
 ];
 
@@ -61,6 +62,7 @@ export const config = {
     "/dashboard/:path*",
     "/library/:path*",
     "/purchased-books/:path*",
+    "/purchased-tools/:path*",
     "/purchased-websites/:path*",
     "/api/books/:path*",
     "/login",
