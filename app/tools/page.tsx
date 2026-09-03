@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Hammer } from "lucide-react";
 import { getEditableStartupTools } from "@/lib/content-store";
 
+export const dynamic = "force-dynamic";
+
 export default async function ToolsPage() {
   const tools = await getEditableStartupTools();
 
