@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { fulfilBookOrder, markBookOrderFailed } from "@/lib/payments/book-orders";
 import { fulfilToolOrder, markToolOrderFailed } from "@/lib/payments/tool-orders";
 import { isTapConfigured, mapTapStatus, verifyTapWebhookSignature } from "@/lib/payments/tap";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+
+function amountsMatch(expected: number, actual: number) {
+  return Math.abs(Math.round(expected * 1000) - Math.round(actual * 1000)) <= 1;
+}
 
 export async function POST(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") ?? "book";
@@ -37,6 +41,49 @@ export async function POST(request: NextRequest) {
 
   if (!chargeId && !orderNo) {
     return NextResponse.json({ error: "Missing charge id and order reference." }, { status: 400 });
+  }
+
+  if (type === "website") {
+    let purchase = orderNo
+      ? await prisma.websitePurchase.findFirst({ where: { transactionId: orderNo } })
+      : null;
+
+    if (!purchase && chargeId) {
+      purchase = await prisma.websitePurchase.findFirst({ where: { transactionId: chargeId } });
+    }
+
+    if (!purchase) {
+      console.warn(`Tap website webhook referenced an unknown purchase (orderNo=${orderNo}, chargeId=${chargeId}).`);
+      return NextResponse.json({ error: "Website purchase not found." }, { status: 404 });
+    }
+
+    if (status !== "PAID") {
+      if (status === "FAILED" || status === "CANCELLED") {
+        await prisma.websitePurchase.updateMany({
+          where: { id: purchase.id, status: { not: "PAID" } },
+          data: { status },
+        });
+      }
+      return NextResponse.json({ ok: true, status });
+    }
+
+    const expectedAmount = Number(purchase.price);
+    const expectedCurrency = purchase.currency.toUpperCase();
+    if (!Number.isFinite(paidAmount) || !amountsMatch(expectedAmount, paidAmount)) {
+      console.warn(`Rejected website payment with mismatched amount for purchase ${purchase.id}.`);
+      return NextResponse.json({ error: "Paid amount does not match the website purchase." }, { status: 422 });
+    }
+    if ((paidCurrency ?? "").toUpperCase() !== expectedCurrency) {
+      console.warn(`Rejected website payment with mismatched currency for purchase ${purchase.id}.`);
+      return NextResponse.json({ error: "Paid currency does not match the website purchase." }, { status: 422 });
+    }
+
+    const updated = await prisma.websitePurchase.updateMany({
+      where: { id: purchase.id, status: { not: "PAID" } },
+      data: { status: "PAID", transactionId: chargeId ?? purchase.transactionId, purchasedAt: new Date() },
+    });
+
+    return NextResponse.json({ ok: true, status: "PAID", alreadyFulfilled: updated.count === 0, purchaseId: purchase.id });
   }
 
   if (type === "tool") {
