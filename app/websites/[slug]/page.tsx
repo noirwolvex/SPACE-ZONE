@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getWebsiteImageUrl } from "@/lib/website-storage";
+import { PurchaseWebsiteButton } from "@/components/websites/PurchaseWebsiteButton";
 
 export const revalidate = 0;
 
@@ -49,12 +50,15 @@ export default async function WebsiteDetailsPage({ params }: Props) {
               <div className="mt-7 grid gap-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Website Category</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.category ?? "Not specified"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Target Audience</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.targetAudience ?? "Not specified"}</p></div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Responsive</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.responsive ?? "Not specified"}</p></div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-950/60 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Responsive</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.responsive ?? "Not specified"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">System</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.system ?? "Custom website system"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Price</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.currency} {site.price.toString()}</p></div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-3"><a href={site.websiteUrl} target="_blank" rel="noreferrer" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-600">Visit live website</a></div>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <PurchaseWebsiteButton websiteId={site.id} />
+                <a href={site.websiteUrl} target="_blank" rel="noreferrer" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-600">Visit live website</a>
+              </div>
             </div>
           </div>
         </section>
