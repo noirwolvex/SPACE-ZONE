@@ -65,25 +65,32 @@ export async function POST(request: NextRequest) {
   });
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    console.error("Avatar upload failed:", uploadError);
+    return NextResponse.json({ error: "Avatar upload could not be completed." }, { status: 500 });
   }
 
   const { data: publicUrlData } = supabaseAdmin.storage.from("avatars").getPublicUrl(filePath);
   const publicUrl = publicUrlData.publicUrl;
-
-  if (profile.avatar && profile.avatar !== publicUrl) {
-    const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/`;
-    const previousPath = profile.avatar.startsWith(prefix) ? profile.avatar.slice(prefix.length) : "";
-    if (previousPath) {
-      await supabaseAdmin.storage.from("avatars").remove([decodeURIComponent(previousPath)]).catch(() => undefined);
-    }
-  }
 
   try {
     const updated = await prisma.customer.update({
       where: { id: profile.id },
       data: { avatar: publicUrl },
     });
+
+    // Remove the old object only after the database points to the new one.
+    // A cleanup failure is harmless: it leaves an orphaned old avatar, not a
+    // broken profile reference.
+    if (profile.avatar && profile.avatar !== publicUrl) {
+      const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/`;
+      const previousPath = profile.avatar.startsWith(prefix) ? profile.avatar.slice(prefix.length) : "";
+      if (previousPath) {
+        await supabaseAdmin.storage.from("avatars").remove([decodeURIComponent(previousPath)]).catch((cleanupError) => {
+          console.warn("Failed to remove previous avatar:", cleanupError);
+        });
+      }
+    }
+
     return NextResponse.json({ ok: true, avatarUrl: publicUrl, profile: updated });
   } catch (updateError) {
     await supabaseAdmin.storage.from("avatars").remove([filePath]).catch(() => undefined);
