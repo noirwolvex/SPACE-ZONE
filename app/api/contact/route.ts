@@ -13,11 +13,6 @@ const MAX_ATTACHMENT_NAME_LENGTH = 255;
 
 const recentRequests = new Map<string, number[]>();
 
-function getRateLimitKey(request: NextRequest, userId: string) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return `${userId}:${forwardedFor || "unknown"}`;
-}
-
 function isRateLimited(key: string) {
   const now = Date.now();
   const existing = recentRequests.get(key) ?? [];
@@ -59,8 +54,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rateLimitKey = getRateLimitKey(request, auth.user.id);
-  if (isRateLimited(rateLimitKey)) {
+  if (isRateLimited(auth.user.id)) {
     return NextResponse.json(
       { error: "Too many messages. Please try again later." },
       { status: 429, headers: { "Retry-After": "600" } }
@@ -76,15 +70,9 @@ export async function POST(request: NextRequest) {
     const contactType = optionalText(json?.contactType, MAX_CONTACT_TYPE_LENGTH);
     const attachmentName = optionalText(json?.attachmentName, MAX_ATTACHMENT_NAME_LENGTH);
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required." }, { status: 400 });
-    }
-
-    if (!message) {
-      return NextResponse.json({ error: "Message is required." }, { status: 400 });
-    }
-
     if (
+      !name ||
+      !message ||
       (json?.name != null && typeof json.name !== "string") ||
       (json?.message != null && typeof json.message !== "string") ||
       (json?.phone != null && typeof json.phone !== "string") ||
@@ -107,7 +95,6 @@ export async function POST(request: NextRequest) {
     const contactMessage = await prisma.contactMessage.create({
       data: {
         name,
-        // Always trust the authenticated profile address, never a client-supplied email.
         email: auth.profile.email ?? auth.user.email ?? "",
         message: finalMessage,
         phone,
