@@ -1,0 +1,6 @@
+import { NextRequest,NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
+export async function GET(request:NextRequest){const admin=await requireAdmin(request);if(!admin.ok)return admin.response;return NextResponse.json(await prisma.newsletterSubscriber.findMany({orderBy:{createdAt:"desc"}}))}
+export async function PATCH(request:NextRequest){const admin=await requireAdmin(request);if(!admin.ok)return admin.response;try{const b=await request.json();const id=String(b.id??""),active=Boolean(b.active);if(!id)return NextResponse.json({error:"Subscriber id is required."},{status:400});return NextResponse.json(await prisma.newsletterSubscriber.update({where:{id},data:{active}}))}catch{return NextResponse.json({error:"Unable to update subscriber."},{status:500})}}
+export async function DELETE(request:NextRequest){const admin=await requireAdmin(request);if(!admin.ok)return admin.response;try{const b=await request.json();const id=String(b.id??"");if(!id)return NextResponse.json({error:"Subscriber id is required."},{status:400});await prisma.newsletterSubscriber.delete({where:{id}});return NextResponse.json({ok:true})}catch{return NextResponse.json({error:"Unable to delete subscriber."},{status:500})}}
