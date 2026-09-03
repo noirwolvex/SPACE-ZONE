@@ -3,44 +3,17 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/content-store";
-import { portfolioProjects } from "@/lib/portfolio";
 
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin(request);
   if (!admin.ok) return admin.response;
 
   try {
-    // Seed the six built-in projects only when they do not already exist.
-    // Title is not unique in the live database schema, so use findFirst here.
-    for (const project of portfolioProjects) {
-      const existing = await prisma.portfolioProject.findFirst({ where: { title: project.title } });
-      if (existing) continue;
-
-      const baseSlug = slugify(project.title);
-      const slugExists = await prisma.portfolioProject.findUnique({ where: { slug: baseSlug } });
-      const slug = slugExists ? `${baseSlug}-${Date.now()}` : baseSlug;
-
-      await prisma.portfolioProject.create({
-        data: {
-          title: project.title,
-          slug,
-          summary: project.summary,
-          outcome: project.outcome,
-          gallery: [],
-          tags: [project.category, ...project.services].filter(Boolean),
-          services: project.services,
-          metrics: project.metrics,
-          gradient: project.gradient,
-        },
-      });
-    }
-
-    const projects = await prisma.portfolioProject.findMany({ orderBy: { createdAt: "asc" } });
+    const projects = await prisma.portfolioProject.findMany({ orderBy: { createdAt: "desc" } });
     return NextResponse.json(projects);
   } catch (error) {
     console.error("[admin/portfolio] GET failed:", error);
-    const message = error instanceof Error ? error.message : "Unable to load portfolio.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Unable to load portfolio." }, { status: 500 });
   }
 }
 
@@ -55,6 +28,11 @@ export async function POST(request: NextRequest) {
     if (!title || !summary) return NextResponse.json({ error: "Title and summary are required." }, { status: 400 });
 
     const slug = slugify(String(body.slug ?? title));
+    if (!slug) return NextResponse.json({ error: "A valid project slug is required." }, { status: 400 });
+
+    const existingSlug = await prisma.portfolioProject.findUnique({ where: { slug } });
+    if (existingSlug) return NextResponse.json({ error: "A project with this slug already exists." }, { status: 409 });
+
     const project = await prisma.portfolioProject.create({
       data: {
         title,
@@ -73,7 +51,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error("[admin/portfolio] POST failed:", error);
-    const message = error instanceof Error ? error.message : "Unable to create portfolio work.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Unable to create portfolio work." }, { status: 500 });
   }
 }
