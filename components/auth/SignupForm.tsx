@@ -25,8 +25,7 @@ export function SignupForm() {
     const checks = passwordChecks.map((check) => check.test(password));
     const met = checks.filter(Boolean).length;
     if (!password) return { label: "Enter a password", score: 0, checks };
-    if (met < 2) return { label: "Weak", score: 1, checks };
-    if (met < 3) return { label: "Fair", score: 2, checks };
+    if (met < 3) return { label: met < 2 ? "Weak" : "Fair", score: met };
     return { label: "Strong", score: 3, checks };
   }, [password]);
 
@@ -45,8 +44,8 @@ export function SignupForm() {
       return;
     }
 
-    if (strength.score < 2) {
-      setError("Use a stronger password with at least 8 characters and a number.");
+    if (strength.score < 3) {
+      setError("Use a stronger password with at least 8 characters, one uppercase letter, and one number.");
       return;
     }
 
@@ -129,7 +128,7 @@ export function SignupForm() {
           <span className="font-semibold text-indigo-600 dark:text-indigo-400">{strength.label}</span>
         </div>
         <div className="mt-3 grid gap-2">
-          {passwordChecks.map((check, index) => {
+          {passwordChecks.map((check) => {
             const passed = check.test(password);
             return (
               <div key={check.label} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
