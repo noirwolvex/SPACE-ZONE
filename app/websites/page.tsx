@@ -7,6 +7,7 @@ export const revalidate = 0;
 
 const categoryCards = [
   { key: "ALL", label: "ALL", subtitle: "Every project in one view" },
+  { key: "KIDS", label: "Kids", subtitle: "Kid-friendly digital experiences" },
   { key: "GAME", label: "GAMES", subtitle: "Interactive game experiences" },
   { key: "LEARNING", label: "Learning", subtitle: "Educational experiences" },
   { key: "BUSINESS", label: "Business", subtitle: "Business & professional work" },
@@ -177,7 +178,7 @@ export default async function WebsitesPage({
             </span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             {categoryCards.map(({ key, label, subtitle }) => {
               const isActive = selectedCategory === key;
               const href = key === "ALL"
@@ -242,34 +243,16 @@ export default async function WebsitesPage({
                       <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/15 to-transparent" />
-                  <div className="absolute left-4 top-4 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-white backdrop-blur-sm">#{String(index + 1).padStart(2, "0")}</div>
-                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                    <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white backdrop-blur-sm">{site.category ?? "Digital launch"}</span>
-                    <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white">Live</span>
-                  </div>
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/45 to-transparent" />
                 </div>
-
                 <div className="p-6">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Project</p>
-                      <h2 className="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">{site.title}</h2>
-                    </div>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{site.currency} {site.price}</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{normalizeCategory(site.category)}</span>
+                    <span className="text-xs font-semibold text-slate-400">#{String(index + 1).padStart(2, "0")}</span>
                   </div>
-
-                  <p className="mt-3 min-h-[72px] text-sm leading-7 text-slate-600 dark:text-slate-300">{site.summary ?? "A polished digital experience designed to communicate clearly and convert with confidence."}</p>
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{site.category ?? "Brand"}</span>
-                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">Premium</span>
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between gap-3">
-                    <Link href={`/websites/${site.slug}`} className="inline-flex rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600">View details</Link>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{site.slug}</span>
-                  </div>
+                  <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{site.title}</h3>
+                  <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
+                  <div className="mt-6 flex items-center justify-between gap-3"><span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{site.currency} {Number(site.price).toFixed(3)}</span><Link href={`/websites/${site.slug}`} className="inline-flex items-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400">View project</Link></div>
                 </div>
               </article>
             ))
