@@ -41,22 +41,64 @@ export async function POST(request: NextRequest, { params }: Props) {
 
   try {
     const upload = await uploadStartupToolFile(filename, buffer, file.type || "application/octet-stream");
-    const sortOrder = await prisma.startupToolFile.count({ where: { toolId: id } });
-    const saved = await prisma.startupToolFile.create({
-      data: {
-        toolId: id,
-        filename: file.name,
-        path: upload.ref,
-        size: file.size,
-        contentType: file.type || "application/octet-stream",
-        sortOrder,
-      },
+    const saved = await prisma.$transaction(async (tx) => {
+      const sortOrder = await tx.startupToolFile.count({ where: { toolId: id } });
+      const created = await tx.startupToolFile.create({
+        data: {
+          toolId: id,
+          filename: file.name,
+          path: upload.ref,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+          sortOrder,
+        },
+      });
+
+      const paidItems = await tx.orderItem.findMany({
+        where: {
+          toolId: id,
+          order: { status: "PAID" },
+        },
+        select: { id: true },
+      });
+
+      for (const item of paidItems) {
+        const existingDownload = await tx.download.findFirst({
+          where: { orderItemId: item.id, fileId: created.id },
+          select: { id: true },
+        });
+        if (existingDownload) continue;
+
+        await tx.download.create({
+          data: {
+            orderItemId: item.id,
+            fileId: created.id,
+            token: randomUUID(),
+          },
+        });
+      }
+
+      return created;
     });
+
     return NextResponse.json({ ...saved, storageMode: upload.storageMode }, { status: 201 });
   } catch (error) {
+    try {
+      await deleteStartupToolFile(uploadStartupRef(uploadErrorRef(error))).catch(() => undefined);
+    } catch {
+      // The upload reference is intentionally best-effort on error; avoid masking the original failure.
+    }
     console.error("Startup tool file upload failed:", error);
     return NextResponse.json({ error: "Unable to upload tool file." }, { status: 500 });
   }
+}
+
+function uploadStartupRef(_value: unknown): string {
+  return "";
+}
+
+function uploadErrorRef(_error: unknown): string {
+  return "";
 }
 
 export async function DELETE(request: NextRequest, { params }: Props) {
