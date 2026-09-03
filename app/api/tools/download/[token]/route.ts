@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Readable } from "stream";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createStartupToolFileSignedUrl, openLocalStartupToolFile } from "@/lib/startup-tool-storage";
@@ -16,11 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     where: { token },
     include: {
       file: true,
-      orderItem: {
-        include: {
-          order: { select: { customerId: true, status: true } },
-        },
-      },
+      orderItem: { include: { order: { select: { customerId: true, status: true } } } },
     },
   });
 
