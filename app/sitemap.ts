@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://spacezonemedia.com").replace(/\/$/, "");
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
   const [services, tools, blogs, portfolio] = await Promise.all([
     prisma.service.findMany({ select: { slug: true, updatedAt: true } }),
     prisma.startupTool.findMany({ select: { slug: true, updatedAt: true } }),
