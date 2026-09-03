@@ -7,16 +7,9 @@ export type StorageMode = "supabase" | "local";
 export type StorageTarget = {
   /** Supabase Storage bucket to upload into. Must be a PRIVATE bucket for protected assets. */
   bucket: string;
-  /**
-   * Directory under `private-storage/` (protected assets) or `public/` (legacy
-   * public assets) used when Supabase is unavailable.
-   */
+  /** Directory under `private-storage/` (protected assets) or `public/` (legacy public assets) used when Supabase is unavailable. */
   localDir: string;
-  /**
-   * URL prefix that serves `localDir` from `public/`.
-   * Only set for public assets (tool/website images). Protected assets such as
-   * book PDFs MUST leave this undefined so they are never statically served.
-   */
+  /** URL prefix that serves `localDir` from `public/`. Only set for public assets. */
   localBaseUrl?: string;
 };
 
@@ -64,10 +57,7 @@ export function parseStorageRef(value: string | null | undefined): StorageRef | 
   return null;
 }
 
-/**
- * Resolve a local reference to an absolute path, guarding against traversal
- * outside the private storage root.
- */
+/** Resolve a legacy/local reference without allowing path traversal. */
 export function resolveLocalPath(target: StorageTarget, relativePath: string) {
   const baseDir = path.join(LOCAL_ROOT, target.localDir);
   const resolved = path.resolve(baseDir, relativePath);
@@ -81,11 +71,12 @@ export function resolveLocalPath(target: StorageTarget, relativePath: string) {
 }
 
 /**
- * Upload a file and return a storage reference.
+ * Upload a protected file to Supabase Storage.
  *
- * Falls back to the private local directory when Supabase rejects the upload
- * (e.g. the object exceeds the project's storage size limit). The fallback is
- * still private: nothing under `private-storage/` is statically served.
+ * Protected assets must remain durable. Unlike public media, they never fall
+ * back to the application filesystem because serverless filesystems are not a
+ * reliable production store and a successful DB write with an ephemeral file
+ * would create broken purchases later.
  */
 export async function uploadFile(
   target: StorageTarget,
@@ -105,19 +96,11 @@ export async function uploadFile(
       return { ref: buildSupabaseRef(target.bucket, objectKey), storageMode: "supabase" };
     }
 
-    if (error) {
-      console.warn(`Supabase Storage upload to "${target.bucket}" failed, storing privately on disk:`, error.message);
-    }
+    throw new Error(error?.message ?? `Supabase Storage upload to ${target.bucket} failed.`);
   } catch (error) {
-    console.warn(`Supabase Storage upload to "${target.bucket}" threw, storing privately on disk:`, error);
+    console.error(`Protected Storage upload to "${target.bucket}" failed:`, error);
+    throw new Error("Protected file storage is unavailable. Please try again later.");
   }
-
-  const baseDir = path.join(LOCAL_ROOT, target.localDir);
-  const destinationDir = directory ? path.join(baseDir, directory) : baseDir;
-  await fs.mkdir(destinationDir, { recursive: true });
-  await fs.writeFile(path.join(destinationDir, filename), fileBuffer);
-
-  return { ref: buildLocalRef(objectKey), storageMode: "local" };
 }
 
 export async function deleteFile(target: StorageTarget, storedRef: string) {
@@ -135,10 +118,7 @@ export async function deleteFile(target: StorageTarget, storedRef: string) {
   }
 }
 
-/**
- * Create a short-lived signed URL for a Supabase-hosted object.
- * Returns null for locally stored objects, which must be streamed by the caller.
- */
+/** Create a short-lived signed URL for a Supabase-hosted object. */
 export async function createSignedUrl(storedRef: string, expiresInSeconds: number, download?: string | boolean) {
   const ref = parseStorageRef(storedRef);
   if (!ref || ref.kind !== "supabase") return null;
@@ -157,9 +137,6 @@ export async function createSignedUrl(storedRef: string, expiresInSeconds: numbe
 
 /* ------------------------------------------------------------------------- */
 /* Legacy public-asset helpers                                               */
-/*                                                                            */
-/* Used by tool/website images, which are intentionally public and whose      */
-/* existing rows store absolute URLs. Do NOT use these for protected assets.  */
 /* ------------------------------------------------------------------------- */
 
 function publicUrl(bucket: string, objectPath: string) {
@@ -176,7 +153,7 @@ function publicUrl(bucket: string, objectPath: string) {
   return `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public/${bucket}/${encodedPath}`;
 }
 
-/** Legacy upload that returns a URL/public path instead of a storage reference. */
+/** Legacy upload for intentionally public media. Public assets may still use the local fallback. */
 export async function uploadPublicFile(
   target: StorageTarget,
   filename: string,
