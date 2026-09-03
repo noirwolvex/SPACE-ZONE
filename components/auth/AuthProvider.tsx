@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { syncCartKeyForCurrentUser } from "@/lib/cart";
+import { safeRedirectPath } from "@/lib/redirect";
 
 interface AuthContextValue {
   user: User | null;
@@ -35,6 +36,28 @@ function getFriendlyAuthError(message: string) {
   }
 
   return message;
+}
+
+/**
+ * Supabase SSR stores auth state in chunked browser cookies. Changing Max-Age
+ * on every auth cookie makes the existing "Remember me" control meaningful:
+ * checked = persistent cookie, unchecked = browser-session cookie.
+ */
+function setAuthCookiePersistence(rememberMe: boolean) {
+  if (typeof document === "undefined") return;
+
+  const maxAge = rememberMe ? 60 * 60 * 24 * 30 : null;
+  for (const rawCookie of document.cookie.split(";")) {
+    const separator = rawCookie.indexOf("=");
+    if (separator <= 0) continue;
+
+    const name = rawCookie.slice(0, separator).trim();
+    const value = rawCookie.slice(separator + 1);
+    if (!name.startsWith("sb-") || !name.includes("-auth-token")) continue;
+
+    const persistence = maxAge == null ? "" : `; Max-Age=${maxAge}`;
+    document.cookie = `${name}=${value}; Path=/; SameSite=Lax; Secure${persistence}`;
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -82,20 +105,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data.session) {
+      setAuthCookiePersistence(options?.rememberMe ?? true);
+
       await fetch("/api/auth/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-access-token": data.session.access_token },
         body: JSON.stringify({ fullName: data.user?.user_metadata?.full_name ?? data.user?.email?.split("@")[0] ?? "User", email: data.user?.email }),
       });
 
-      // Force the Supabase browser client to finish persisting the session before
-      // the next protected-route request is made. A full navigation also gives
-      // Next.js/Cloudflare middleware a fresh request containing the session.
       await supabase.auth.getSession();
       await new Promise((resolve) => setTimeout(resolve, 75));
 
       if (data.user?.email_confirmed_at) {
-        window.location.assign(options?.redirectTo ?? "/");
+        window.location.assign(safeRedirectPath(options?.redirectTo, "/"));
       } else {
         window.location.assign("/verify-email");
       }
@@ -117,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: getFriendlyAuthError(result.error ?? "Unable to create account.") };
     }
 
-    router.replace(options?.redirectTo ?? "/login");
+    router.replace(safeRedirectPath(options?.redirectTo, "/login"));
     return { message: "Account created successfully. You can now sign in." };
   }, [router]);
 
