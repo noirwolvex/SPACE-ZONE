@@ -6,8 +6,8 @@ export const MEDIA_STORAGE: StorageTarget = {
   localBaseUrl: "/tools",
 };
 
-/** Directory within the media bucket for startup tool thumbnails. */
 export const TOOL_THUMBNAIL_DIR = "tools";
+export const CONTACT_ATTACHMENT_DIR = "contact";
 
 export const IMAGE_EXTENSIONS = new Map([
   ["image/png", "png"],
