@@ -1,7 +1,0 @@
-Loaded Prisma config from prisma.config.ts.
-
-Prisma schema loaded from prisma\schema.prisma.
-Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-0-ap-southeast-2.pooler.supabase.com:5432"
-
-The database is already in sync with the Prisma schema.
-
