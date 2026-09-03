@@ -28,12 +28,14 @@ model Customer {
   bookOrders     BookOrder[]
   purchasedBooks PurchasedBook[]
   cartItems      ShoppingCartItem[]
+  websitePurchases WebsitePurchase[]
 }
 
 model Service {
   id          String        @id @default(cuid())
   name        String
   slug        String        @unique
+  summary     String
   description String
   workflow    String?
   examples    String?
@@ -326,6 +328,28 @@ model Website {
   isPublished    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now())
+  purchases      WebsitePurchase[]
+}
+
+model WebsitePurchase {
+  id            String   @id @default(cuid())
+  customerId    String
+  websiteId     String
+  price         Decimal  @db.Decimal(12, 3)
+  currency      String
+  status        String   @default("PENDING")
+  transactionId String?
+  purchasedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  website  Website  @relation(fields: [websiteId], references: [id])
+
+  @@unique([customerId, websiteId])
+  @@index([customerId, status])
+  @@index([websiteId])
+  @@index([transactionId])
 }
 
 model NewsletterSubscriber {
