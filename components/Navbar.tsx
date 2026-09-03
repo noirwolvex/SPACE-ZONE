@@ -35,6 +35,7 @@ export default function Navbar() {
               src="/spacezone-logo.jfif"
               alt="Space Zone Media Logo"
               fill
+              sizes="40px"
               className="object-contain"
             />
           </div>
