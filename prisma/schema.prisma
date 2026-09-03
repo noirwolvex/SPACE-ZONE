@@ -11,15 +11,15 @@ datasource db {
 }
 
 model Customer {
-  id             String            @id @default(cuid())
-  email          String            @unique
+  id             String             @id @default(cuid())
+  email          String             @unique
   name           String?
   phone          String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   avatar         String?
-  role           String            @default("USER")
-  supabaseId     String?           @unique(where: raw("(\"supabaseId\" IS NOT NULL)"))
+  role           String             @default("USER")
+  supabaseId     String?            @unique(where: raw("(\"supabaseId\" IS NOT NULL)"))
   bio            String?
   city           String?
   country        String?
@@ -94,28 +94,45 @@ model ToolCategory {
 }
 
 model StartupTool {
-  id            String         @id @default(cuid())
-  name          String         @unique
-  slug          String         @unique
+  id            String           @id @default(cuid())
+  name          String           @unique
+  slug          String           @unique
   thumbnail     String?
   screenshots   String[]
   summary       String
   description   String
   benefits      String[]
   includedFiles String[]
-  bestFor       String[]       @default([])
+  bestFor       String[]         @default([])
   instructions  String?
   faqs          Json?
-  price         Decimal        @db.Decimal(12, 3)
+  price         Decimal          @db.Decimal(12, 3)
   categoryId    String
-  seoId         String?        @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  seoId         String?          @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   orderItems    OrderItem[]
-  category      ToolCategory   @relation(fields: [categoryId], references: [id])
-  seoMetadata   SeoMetadata?   @relation(fields: [seoId], references: [id])
+  files         StartupToolFile[]
+  category      ToolCategory     @relation(fields: [categoryId], references: [id])
+  seoMetadata   SeoMetadata?     @relation(fields: [seoId], references: [id])
 
   @@index([categoryId])
+}
+
+model StartupToolFile {
+  id          String      @id @default(cuid())
+  toolId      String
+  filename    String
+  path        String      @unique
+  size        Int
+  contentType String
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  tool        StartupTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  downloads   Download[]
+
+  @@index([toolId, sortOrder])
 }
 
 model Order {
@@ -178,15 +195,18 @@ model Payment {
 }
 
 model Download {
-  id          String    @id @default(cuid())
+  id          String          @id @default(cuid())
   orderItemId String
-  token       String    @unique
+  fileId      String?
+  token       String          @unique
   accessedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  orderItem   OrderItem       @relation(fields: [orderItemId], references: [id])
+  file        StartupToolFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@index([orderItemId])
+  @@index([fileId])
 }
 
 model ContactMessage {
@@ -212,10 +232,10 @@ model SeoMetadata {
   slug             String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  blogPost         BlogPost?
-  portfolioProject PortfolioProject?
-  service          Service?
-  startupTool      StartupTool?
+  blogPost         BlogPost?         @relation(fields: [], references: [])
+  portfolioProject PortfolioProject? @relation(fields: [], references: [])
+  service          Service?          @relation(fields: [id], references: [seoId])
+  startupTool      StartupTool?      @relation(fields: [id], references: [seoId])
 }
 
 model Book {
@@ -235,7 +255,7 @@ model Book {
   features       String?
   targetAudience String?
   bookSize       String?
-  pageCount     Int?
+  pageCount      Int?
   seriesParts    String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
