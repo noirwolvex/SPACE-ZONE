@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureProfileForUser } from "@/lib/auth";
 import { createServerSupabaseClient, supabaseAdmin } from "@/lib/supabase";
 
+const MAX_FULL_NAME_LENGTH = 120;
+
+function getFullName(body: unknown, fallback: string) {
+  const value =
+    typeof body === "object" && body !== null
+      ? (body as Record<string, unknown>).fullName ??
+        (body as Record<string, unknown>).name ??
+        (body as Record<string, unknown>).full_name
+      : undefined;
+
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim();
+  return normalized.slice(0, MAX_FULL_NAME_LENGTH) || fallback;
+}
+
 export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
 
@@ -16,12 +31,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid authentication session" }, { status: 401 });
       }
 
-      const fullName = body?.fullName || body?.name || body?.full_name || body?.email?.split("@")[0] || "User";
-      const email = body?.email || data.user.email;
-
+      const email = data.user.email;
       if (!email) {
         return NextResponse.json({ error: "Missing email" }, { status: 400 });
       }
+
+      const fallbackName = email.split("@")[0] || "User";
+      const fullName = getFullName(body, data.user.user_metadata?.full_name || fallbackName);
 
       await ensureProfileForUser({
         id: data.user.id,
@@ -39,8 +55,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid authentication session" }, { status: 401 });
     }
 
-    const fullName = body?.fullName || body?.name || body?.full_name || data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User";
-    const email = body?.email || data.user.email;
+    const email = data.user.email;
+    if (!email) {
+      return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    }
+
+    const fallbackName = email.split("@")[0] || "User";
+    const fullName = getFullName(body, data.user.user_metadata?.full_name || fallbackName);
 
     await ensureProfileForUser({
       id: data.user.id,
