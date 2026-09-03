@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -23,6 +21,7 @@
 # misc
 .DS_Store
 *.pem
+*.bak
 
 # debug
 npm-debug.log*
@@ -40,6 +39,11 @@ yarn-error.log*
 # private book storage (never served publicly — access only via /api/books/[id]/access)
 /private-storage
 /public/books
+
+# temporary working files
+/tmp/
+*.tmp
+*.log
 
 # typescript
 *.tsbuildinfo
