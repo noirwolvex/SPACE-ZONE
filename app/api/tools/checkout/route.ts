@@ -139,9 +139,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await prisma.payment.update({
+  await prisma.payment.upsert({
     where: { orderId: order.id },
-    data: { tapChargeId: charge.chargeId, status: "PENDING", amount: Number(order.total) },
+    update: {
+      tapChargeId: charge.chargeId,
+      status: "PENDING",
+      amount: Number(order.total),
+    },
+    create: {
+      orderId: order.id,
+      tapChargeId: charge.chargeId,
+      status: "PENDING",
+      amount: Number(order.total),
+    },
   });
 
   return json({
