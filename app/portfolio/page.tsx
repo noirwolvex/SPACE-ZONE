@@ -3,6 +3,8 @@ import { ArrowRight, CheckCircle2, ExternalLink, Layers3, Megaphone, Printer, St
 import { prisma } from "@/lib/prisma";
 import { portfolioCapabilities, portfolioProjects, type PortfolioProject } from "@/lib/portfolio";
 
+export const dynamic = "force-dynamic";
+
 const studioStats = [
   { label: "Core focus", value: "Print + Digital" },
   { label: "Creative lanes", value: "6" },
