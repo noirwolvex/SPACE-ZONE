@@ -61,6 +61,22 @@ export async function POST(request: NextRequest) {
   const validItems = normalizedItems.filter(Boolean) as Array<{ toolId: string; price: number; quantity: number }>;
   if (validItems.length !== items.length) return json({ error: "One or more selected tools are no longer available." }, { status: 400 });
 
+  const alreadyPurchasedRows = await prisma.orderItem.findMany({
+    where: {
+      toolId: { in: validItems.map((item) => item.toolId) },
+      order: { customerId: profile.id, status: "PAID" },
+    },
+    select: { toolId: true, tool: { select: { name: true } } },
+  });
+
+  if (alreadyPurchasedRows.length > 0) {
+    const purchasedNames = Array.from(new Set(alreadyPurchasedRows.map((row) => row.tool.name)));
+    return json(
+      { error: purchasedNames.length === 1 ? `You already own ${purchasedNames[0]}.` : `You already own these tools: ${purchasedNames.join(", ")}.` },
+      { status: 409 },
+    );
+  }
+
   const order = await createPendingToolOrder({ customerId: profile.id, items: validItems, currency: "BHD" });
 
   if (!isTapConfigured()) {
