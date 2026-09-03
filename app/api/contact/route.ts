@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 5;
@@ -10,32 +11,6 @@ const MAX_PHONE_LENGTH = 40;
 const MAX_DETAILS_LENGTH = 2000;
 const MAX_CONTACT_TYPE_LENGTH = 100;
 const MAX_ATTACHMENT_NAME_LENGTH = 255;
-
-const recentRequests = new Map<string, number[]>();
-
-function isRateLimited(key: string) {
-  const now = Date.now();
-  const existing = recentRequests.get(key) ?? [];
-  const active = existing.filter((timestamp) => now - timestamp < WINDOW_MS);
-
-  if (active.length >= MAX_REQUESTS_PER_WINDOW) {
-    recentRequests.set(key, active);
-    return true;
-  }
-
-  active.push(now);
-  recentRequests.set(key, active);
-
-  if (recentRequests.size > 10_000) {
-    for (const [storedKey, timestamps] of recentRequests) {
-      if (!timestamps.some((timestamp) => now - timestamp < WINDOW_MS)) {
-        recentRequests.delete(storedKey);
-      }
-    }
-  }
-
-  return false;
-}
 
 function optionalText(value: unknown, maxLength: number) {
   if (value == null) return null;
@@ -50,18 +25,24 @@ export async function POST(request: NextRequest) {
   if (!auth?.profile) {
     return NextResponse.json(
       { error: "Authentication required. Please log in to contact us." },
-      { status: 401 }
-    );
-  }
-
-  if (isRateLimited(auth.user.id)) {
-    return NextResponse.json(
-      { error: "Too many messages. Please try again later." },
-      { status: 429, headers: { "Retry-After": "600" } }
+      { status: 401 },
     );
   }
 
   try {
+    const rateLimit = await consumeRateLimit(
+      `contact:${auth.user.id}`,
+      MAX_REQUESTS_PER_WINDOW,
+      WINDOW_MS,
+    );
+
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "Too many messages. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
+    }
+
     const json = await request.json();
     const name = optionalText(json?.name, MAX_NAME_LENGTH);
     const message = optionalText(json?.message, MAX_MESSAGE_LENGTH);
