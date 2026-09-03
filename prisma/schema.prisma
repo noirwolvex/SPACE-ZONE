@@ -11,15 +11,15 @@ datasource db {
 }
 
 model Customer {
-  id             String             @id @default(cuid())
-  email          String             @unique
+  id             String            @id @default(cuid())
+  email          String            @unique
   name           String?
   phone          String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   avatar         String?
-  role           String             @default("USER")
-  supabaseId     String?            @unique(where: raw("(\"supabaseId\" IS NOT NULL)"))
+  role           String            @default("USER")
+  supabaseId     String?           @unique(where: raw("(\"supabaseId\" IS NOT NULL)"))
   bio            String?
   city           String?
   country        String?
@@ -120,16 +120,16 @@ model StartupTool {
 }
 
 model StartupToolFile {
-  id          String      @id @default(cuid())
+  id          String        @id @default(cuid())
   toolId      String
   filename    String
-  path        String      @unique
+  path        String        @unique
   size        Int
   contentType String
-  sortOrder   Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  tool        StartupTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  tool        StartupTool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
   downloads   Download[]
 
   @@index([toolId, sortOrder])
@@ -195,14 +195,14 @@ model Payment {
 }
 
 model Download {
-  id          String          @id @default(cuid())
+  id          String           @id @default(cuid())
   orderItemId String
   fileId      String?
-  token       String          @unique
+  token       String           @unique
   accessedAt  DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  orderItem   OrderItem       @relation(fields: [orderItemId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  orderItem   OrderItem        @relation(fields: [orderItemId], references: [id])
   file        StartupToolFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@index([orderItemId])
@@ -232,10 +232,10 @@ model SeoMetadata {
   slug             String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  blogPost         BlogPost?         @relation(fields: [], references: [])
-  portfolioProject PortfolioProject? @relation(fields: [], references: [])
-  service          Service?          @relation(fields: [id], references: [seoId])
-  startupTool      StartupTool?      @relation(fields: [id], references: [seoId])
+  blogPost         BlogPost?
+  portfolioProject PortfolioProject?
+  service          Service?
+  startupTool      StartupTool?
 }
 
 model Book {
