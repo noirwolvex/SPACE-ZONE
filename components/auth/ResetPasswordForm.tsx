@@ -5,6 +5,10 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/components/auth/AuthProvider";
 
+function isStrongPassword(password: string) {
+  return password.length >= 8 && /[A-Z]/.test(password) && /\d/.test(password);
+}
+
 export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,6 +21,11 @@ export function ResetPasswordForm() {
     event.preventDefault();
     setError(null);
     setMessage(null);
+
+    if (!isStrongPassword(password)) {
+      setError("Use a password with at least 8 characters, one uppercase letter, and one number.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
