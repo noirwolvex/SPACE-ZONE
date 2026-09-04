@@ -48,34 +48,14 @@ function searchableGameText(site: {
     .toLowerCase();
 }
 
-function matchesGameAge(site: Parameters<typeof searchableGameText>[0], age: string) {
+function matchesGameAge(site: Parameters<typeof searchableGameText>[0] & { age: string | null }, age: string) {
   if (age === "ALL") return true;
-  const text = searchableGameText(site);
-
-  const patterns: Record<string, RegExp> = {
-    "3-5": /(3\s*[-–]\s*5|ages?\s*3\s*(to|[-–])\s*5|ages?\s*3\b|preschool|pre-?k|kindergarten)/i,
-    "6-8": /(6\s*[-–]\s*8|ages?\s*6\s*(to|[-–])\s*8|ages?\s*6\b|early elementary)/i,
-    "9-12": /(9\s*[-–]\s*12|ages?\s*9\s*(to|[-–])\s*12|ages?\s*9\b|upper elementary|preteen)/i,
-    "13+": /(13\s*\+|ages?\s*(13|14|15|16|17|18)|teen|young adult|adult)/i,
-  };
-
-  return patterns[age]?.test(text) ?? false;
+  return site.age?.trim().toUpperCase() === age;
 }
 
-function matchesGameType(site: Parameters<typeof searchableGameText>[0], type: string) {
+function matchesGameType(site: Parameters<typeof searchableGameText>[0] & { gameType: string | null }, type: string) {
   if (type === "ALL") return true;
-  const text = searchableGameText(site);
-
-  const keywords: Record<string, string[]> = {
-    PUZZLE: ["puzzle", "logic", "memory", "match", "maze", "brain"],
-    ADVENTURE: ["adventure", "explorer", "safari", "quest", "journey"],
-    EDUCATIONAL: ["educational", "learning", "learn", "quiz", "math", "science", "vocabulary", "alphabet", "coding"],
-    ARCADE: ["arcade", "race", "rush", "reaction", "runner", "hunt"],
-    STRATEGY: ["strategy", "strategic", "tactic", "planning"],
-    CREATIVE: ["creative", "music", "coloring", "drawing", "story", "builder", "design", "create"],
-  };
-
-  return (keywords[type] ?? []).some((keyword) => text.includes(keyword));
+  return site.gameType?.trim().toUpperCase() === type;
 }
 
 export default async function WebsitesPage({
