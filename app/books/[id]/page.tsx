@@ -34,6 +34,7 @@ const BOOK_DETAIL_SELECT = {
   price: true,
   currency: true,
   isFree: true,
+  isDeleted: true,
   images: {
     orderBy: { sortOrder: "asc" },
     select: { id: true, imageUrl: true, sortOrder: true },
@@ -42,8 +43,8 @@ const BOOK_DETAIL_SELECT = {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const book = await prisma.book.findUnique({ where: { id }, select: { title: true, filename: true, summary: true } });
-  if (!book) return { title: "Book not found — Space Zone" };
+  const book = await prisma.book.findUnique({ where: { id }, select: { title: true, filename: true, summary: true, isDeleted: true } });
+  if (!book || book.isDeleted) return { title: "Book not found — Space Zone" };
   return { title: `${book.title ?? book.filename} — Space Zone`, description: book.summary ?? undefined };
 }
 
@@ -55,6 +56,14 @@ export default async function BookDetailsPage({ params }: { params: Promise<{ id
   const auth = await getCurrentUser();
   const isSignedIn = Boolean(auth);
   const isPurchased = await hasPurchasedBook(auth?.profile?.id, book.id);
+
+  // Archived books are hidden from the public catalogue, but an existing
+  // purchaser or administrator can still reach the details page to use a
+  // historical entitlement.
+  if (book.isDeleted && !auth?.isAdmin && !isPurchased) {
+    notFound();
+  }
+
   const isFree = Boolean(book.isFree);
   const canRead = isFree || isPurchased || Boolean(auth?.isAdmin);
 
@@ -113,6 +122,11 @@ export default async function BookDetailsPage({ params }: { params: Promise<{ id
                 <span className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
                   {displayAge ?? "All ages"}
                 </span>
+                {book.isDeleted ? (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200">
+                    Archived
+                  </span>
+                ) : null}
               </div>
 
               <h1 className="mt-4 text-4xl font-black leading-[1.1] tracking-tight text-slate-950 sm:text-5xl dark:text-white">{displayTitle}</h1>
