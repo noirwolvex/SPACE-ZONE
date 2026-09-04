@@ -119,7 +119,7 @@ export function hasActiveFilters(filters: BookFilters) {
  * because older books have no title and fall back to filename in the UI.
  */
 export function buildBookWhere(filters: BookFilters): Prisma.BookWhereInput {
-  const conditions: Prisma.BookWhereInput[] = [];
+  const conditions: Prisma.BookWhereInput[] = [{ isDeleted: false }];
 
   if (filters.q) {
     conditions.push({
@@ -154,7 +154,7 @@ export function buildBookWhere(filters: BookFilters): Prisma.BookWhereInput {
     conditions.push({ isFree: false });
   }
 
-  return conditions.length > 0 ? { AND: conditions } : {};
+  return { AND: conditions };
 }
 
 /**
