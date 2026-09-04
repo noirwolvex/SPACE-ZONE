@@ -23,6 +23,7 @@ export type BookForAccess = {
   filename: string;
   path: string;
   isFree: boolean;
+  isDeleted: boolean;
   price: unknown;
   currency: string;
 };
@@ -33,6 +34,7 @@ const BOOK_ACCESS_SELECT = {
   filename: true,
   path: true,
   isFree: true,
+  isDeleted: true,
   price: true,
   currency: true,
 } as const;
@@ -52,6 +54,37 @@ export async function resolveBookAccess(
   });
 
   if (!book) {
+    return { status: "not_found" };
+  }
+
+  // Archived books are no longer public. Existing purchasers and admins may
+  // still access their files so historical purchases remain usable.
+  if (book.isDeleted) {
+    const supabase = createServerSupabaseClient(request, response);
+    const { data: userData, error } = await supabase.auth.getUser();
+
+    if (error || !userData.user) {
+      return { status: "not_found" };
+    }
+
+    const profile = await ensureProfileForUser(userData.user);
+    if (!profile) {
+      return { status: "not_found" };
+    }
+
+    if (profile.role === "ADMIN") {
+      return { status: "granted", book, reason: "ADMIN", customerId: profile.id };
+    }
+
+    const purchase = await prisma.purchasedBook.findUnique({
+      where: { customerId_bookId: { customerId: profile.id, bookId: book.id } },
+      select: { status: true },
+    });
+
+    if (purchase && grantsAccess(purchase.status)) {
+      return { status: "granted", book, reason: "PURCHASED", customerId: profile.id };
+    }
+
     return { status: "not_found" };
   }
 
