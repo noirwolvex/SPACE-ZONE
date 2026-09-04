@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"services" | "tools" | null>(null);
+  const [activeTab, setActiveTab] = useState<"services" | "tools">("tools");
   const [services, setServices] = useState<AdminService[]>([]);
   const [tools, setTools] = useState<AdminTool[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -953,3 +953,4 @@ function ContentList({
     </section>
   );
 }
+
