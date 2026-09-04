@@ -11,6 +11,8 @@ export interface WebsiteRecord {
   features?: string | null;
   targetAudience?: string | null;
   responsive?: string | null;
+  age?: string | null;
+  gameType?: string | null;
   price: number;
   currency: string;
   category?: string | null;
@@ -29,6 +31,8 @@ export type WebsiteFormValues = {
   features?: string;
   targetAudience?: string;
   responsive?: string;
+  age?: string;
+  gameType?: string;
   category: string;
   price?: string;
   currency: string;
