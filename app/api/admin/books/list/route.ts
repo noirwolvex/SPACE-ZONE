@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   if (!admin.ok) return admin.response;
 
   const books = await prisma.book.findMany({
+    where: { isDeleted: false },
     orderBy: { uploadedAt: "desc" },
     // `path` is intentionally excluded so the admin bundle never holds a storage
     // reference. Admins read files through /api/books/[id]/access like anyone else.
