@@ -68,9 +68,9 @@ export default async function BooksPage({
   let freeBooks = books.filter((book) => Boolean(book.isFree)).length;
   try {
     const [categoryGroups, totalCount, freeCount] = await Promise.all([
-      prisma.book.groupBy({ by: ["category"], _count: { _all: true } }),
-      prisma.book.count(),
-      prisma.book.count({ where: { isFree: true } }),
+      prisma.book.groupBy({ where: { isDeleted: false }, by: ["category"], _count: { _all: true } }),
+      prisma.book.count({ where: { isDeleted: false } }),
+      prisma.book.count({ where: { isDeleted: false, isFree: true } }),
     ]);
 
     categoryOptions = categoryGroups
