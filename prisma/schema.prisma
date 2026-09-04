@@ -80,7 +80,7 @@ model BlogPost {
   category    String
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  updatedAt   DateTime      @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -173,8 +173,8 @@ model OrderItem {
   orderId   String
   toolId    String
   price     Decimal     @db.Decimal(12, 3)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   downloads Download[]
   order     Order       @relation(fields: [orderId], references: [id])
   tool      StartupTool @relation(fields: [toolId], references: [id])
@@ -211,8 +211,8 @@ model Download {
 
 model ContactMessage {
   id             String   @id @default(cuid())
-  name           String
-  email          String
+  name            String
+  email           String
   phone           String?
   contactType    String   @default("Inquiry")
   message        String
@@ -261,6 +261,7 @@ model Book {
   updatedAt      DateTime        @updatedAt
   currency       String          @default("BHD")
   isFree         Boolean         @default(false)
+  isDeleted      Boolean         @default(false)
   price          Decimal?
   orders         BookOrder[]
   purchases      PurchasedBook[]
@@ -269,6 +270,7 @@ model Book {
   @@index([category])
   @@index([ageGroup])
   @@index([isFree])
+  @@index([isDeleted])
   @@index([uploadedAt])
 }
 
