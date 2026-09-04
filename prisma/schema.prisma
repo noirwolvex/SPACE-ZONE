@@ -195,15 +195,15 @@ model Payment {
 }
 
 model Download {
-  id          String           @id @default(cuid())
-  orderItemId String
-  fileId      String?
-  token       String           @unique
-  accessedAt  DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  orderItem   OrderItem        @relation(fields: [orderItemId], references: [id])
-  file        StartupToolFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  id            String           @id @default(cuid())
+  orderItemId   String
+  fileId        String?
+  token         String           @unique
+  accessedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  orderItem     OrderItem        @relation(fields: [orderItemId], references: [id])
+  file          StartupToolFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@index([orderItemId])
   @@index([fileId])
@@ -213,7 +213,7 @@ model ContactMessage {
   id             String   @id @default(cuid())
   name           String
   email          String
-  phone          String?
+  phone           String?
   contactType    String   @default("Inquiry")
   message        String
   details        String?
@@ -345,6 +345,8 @@ model Website {
   features       String?
   targetAudience String?
   responsive     String?
+  age            String?
+  gameType       String?
   price          Decimal  @db.Decimal(12, 3)
   currency       String
   category       String?
