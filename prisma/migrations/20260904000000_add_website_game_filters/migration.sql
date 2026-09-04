@@ -1,0 +1,3 @@
+ALTER TABLE "Website"
+ADD COLUMN "age" TEXT,
+ADD COLUMN "gameType" TEXT;
