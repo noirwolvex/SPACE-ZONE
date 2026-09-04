@@ -29,11 +29,15 @@ export async function POST(request: NextRequest) {
 
   const book = await prisma.book.findUnique({
     where: { id: bookId },
-    select: { id: true, title: true, isFree: true, price: true, currency: true },
+    select: { id: true, title: true, isFree: true, isDeleted: true, price: true, currency: true },
   });
 
   if (!book) {
     return json({ error: "Book not found." }, { status: 404 });
+  }
+
+  if (book.isDeleted) {
+    return json({ error: "This book is no longer available for purchase." }, { status: 410 });
   }
 
   if (book.isFree) {
