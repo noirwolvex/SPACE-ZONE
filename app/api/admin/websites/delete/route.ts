@@ -12,28 +12,19 @@ export async function POST(request: NextRequest) {
     const id = typeof body?.id === "string" ? body.id.trim() : "";
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const existing = await prisma.website.findUnique({ where: { id } });
+    const existing = await prisma.website.findUnique({ where: { id }, include: { video: true } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const videoRows = await prisma.$queryRaw<Array<{ videoPath: string }>>`
-      SELECT "videoPath" FROM "WebsiteVideo" WHERE "websiteId" = ${id} LIMIT 1
-    `;
-
     const filePaths = Array.from(
-      new Set([existing.image, ...(existing.gallery ?? []), videoRows[0]?.videoPath].filter(Boolean))
+      new Set([existing.image, ...(existing.gallery ?? []), existing.video?.videoPath].filter(Boolean))
     ) as string[];
 
     await prisma.website.delete({ where: { id } });
 
-    const cleanupResults = await Promise.allSettled(
-      filePaths.map((filePath) => deleteWebsiteFile(filePath))
-    );
-
+    const cleanupResults = await Promise.allSettled(filePaths.map((filePath) => deleteWebsiteFile(filePath)));
     const cleanupFailures = cleanupResults.filter((result) => result.status === "rejected");
     if (cleanupFailures.length) {
-      console.error(
-        `Website ${existing.slug} was deleted, but ${cleanupFailures.length} storage file(s) could not be removed.`
-      );
+      console.error(`Website ${existing.slug} was deleted, but ${cleanupFailures.length} storage file(s) could not be removed.`);
     }
 
     return NextResponse.json({ success: true });
