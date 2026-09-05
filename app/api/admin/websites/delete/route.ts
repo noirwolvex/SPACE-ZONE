@@ -15,8 +15,12 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.website.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    const videoRows = await prisma.$queryRaw<Array<{ videoPath: string }>>`
+      SELECT "videoPath" FROM "WebsiteVideo" WHERE "websiteId" = ${id} LIMIT 1
+    `;
+
     const filePaths = Array.from(
-      new Set([existing.image, ...(existing.gallery ?? [])].filter(Boolean))
+      new Set([existing.image, ...(existing.gallery ?? []), videoRows[0]?.videoPath].filter(Boolean))
     ) as string[];
 
     await prisma.website.delete({ where: { id } });
