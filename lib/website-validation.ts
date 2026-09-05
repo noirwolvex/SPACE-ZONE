@@ -3,7 +3,7 @@ import { z } from "zod";
 export const WEBSITE_CATEGORIES = ["KIDS", "LEARNING", "GAME", "BUSINESS", "Portfolio", "Ecommerce", "Blog", "Landing", "Other"] as const;
 export const WEBSITE_RESPONSIVE_OPTIONS = ["Fully Responsive", "Partially Responsive", "Desktop Only", "Mobile Only"] as const;
 export const WEBSITE_GAME_AGES = ["3-5", "6-8", "9-12", "13+"] as const;
-export const WEBSITE_GAME_TYPES = ["PUZZLE", "ADVENTURE", "EDUCATIONAL", "ARCADE", "STRATEGY", "CREATIVE"] as const;
+export const WEBSITE_GAME_TYPES = ["PUZZLE", "ADVENTURE", "EDUCATIONAL", "ARCADE", "STRATEGY", "CREATIVE", "CUSTOM"] as const;
 
 export const websiteSchema = z.object({
   title: z.string().trim().min(1, "Title is required."),
