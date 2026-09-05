@@ -116,23 +116,23 @@ export default async function WebsitesPage({
           {selectedCategory === "GAME" && <GameFilters selectedAge={selectedAge} selectedType={selectedType} />}
         </section>
 
-        <section id="showcase" className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <section id="showcase" className="grid gap-8 md:grid-cols-2">
           {filteredSites.length === 0 ? (
             <div className="col-span-full rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-10 text-center text-slate-500 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50 dark:text-slate-400">No websites available in this category yet.</div>
           ) : (
             filteredSites.map((site, index) => (
-              <article key={site.id} className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_70px_-32px_rgba(15,23,42,0.4)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_-28px_rgba(79,70,229,0.38)] dark:border-slate-800 dark:bg-slate-900/70">
-                <Link href={`/websites/${site.slug}`} aria-label={`View ${site.title}`} className="absolute inset-0 z-0 rounded-[28px]" />
+              <article key={site.id} className="group relative cursor-pointer overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_36px_95px_-32px_rgba(79,70,229,0.4)] dark:border-slate-800 dark:bg-slate-900/70">
+                <Link href={`/websites/${site.slug}`} aria-label={`View ${site.title}`} className="absolute inset-0 z-0 rounded-[32px]" />
                 <div className="relative z-10 pointer-events-none">
-                  <div className="relative h-52 overflow-hidden">
-                    {site.imageUrl ? <img src={site.imageUrl} alt={site.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-end bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 p-5"><div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div></div>}
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/45 to-transparent" />
+                  <div className="relative h-72 overflow-hidden sm:h-80">
+                    {site.imageUrl ? <img src={site.imageUrl} alt={site.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-end bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 p-6"><div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div></div>}
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/60 to-transparent" />
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between gap-3"><span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{normalizeCategory(site.category)}</span><span className="text-xs font-semibold text-slate-400">#{String(index + 1).padStart(2, "0")}</span></div>
-                    <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{site.title}</h3>
-                    <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
-                    <div className="mt-6 flex items-center justify-between gap-3"><span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{site.currency} {Number(site.price).toFixed(3)}</span><Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex items-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400">View project</Link></div>
+                  <div className="p-7 sm:p-8">
+                    <div className="flex items-center justify-between gap-3"><span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{normalizeCategory(site.category)}</span><span className="text-xs font-semibold text-slate-400">#{String(index + 1).padStart(2, "0")}</span></div>
+                    <h3 className="mt-5 text-3xl font-black tracking-tight text-slate-950 dark:text-white">{site.title}</h3>
+                    <p className="mt-4 line-clamp-4 text-base leading-7 text-slate-600 dark:text-slate-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
+                    <div className="mt-7 flex items-center justify-between gap-4"><span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{site.currency} {Number(site.price).toFixed(3)}</span><Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400">View project</Link></div>
                   </div>
                 </div>
               </article>
