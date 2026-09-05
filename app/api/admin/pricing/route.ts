@@ -1,0 +1,14 @@
+import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/admin-auth";
+import { prisma } from "@/lib/prisma";
+import { getPricingPlans } from "@/lib/content-store";
+
+const MAX={name:120,slug:120,description:1000,currency:10,ctaLabel:100,ctaHref:500,feature:200};
+function bounded(value:unknown,max:number){return String(value??"").trim().slice(0,max)}
+function list(value:unknown){return Array.isArray(value)?value.map(v=>bounded(v,MAX.feature)).filter(Boolean).slice(0,20):[]}
+function slugify(value:string){return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}
+function payload(body:any){const name=bounded(body?.name,MAX.name);const slug=slugify(bounded(body?.slug||name,MAX.slug));const price=Number(body?.price);return{name,slug,description:bounded(body?.description,MAX.description),price:Number.isFinite(price)?Math.max(0,Math.min(999999,price)):0,currency:bounded(body?.currency||"BHD",MAX.currency).toUpperCase(),features:list(body?.features),ctaLabel:bounded(body?.ctaLabel||"Get started",MAX.ctaLabel),ctaHref:bounded(body?.ctaHref||"/contact",MAX.ctaHref),isPopular:Boolean(body?.isPopular),isPublished:body?.isPublished!==false,sortOrder:Number.isFinite(Number(body?.sortOrder))?Math.max(0,Math.min(9999,Math.round(Number(body.sortOrder)))):0}}
+
+export async function GET(request:NextRequest){const admin=await requireAdmin(request);if(!admin.ok)return admin.response;try{return NextResponse.json(await getPricingPlans())}catch(error){console.error("Unable to load pricing plans:",error);return NextResponse.json({error:"Unable to load pricing plans."},{status:500})}}
+export async function POST(request:NextRequest){const admin=await requireAdmin(request);if(!admin.ok)return admin.response;try{const data=payload(await request.json());if(!data.name||!data.slug||!data.description)return NextResponse.json({error:"Name, slug, and description are required."},{status:400});const exists=await prisma.$queryRaw<any[]>`SELECT "id" FROM "PricingPlan" WHERE "slug"=${data.slug} LIMIT 1`;if(exists.length)return NextResponse.json({error:"A pricing plan with this slug already exists."},{status:409});const rows=await prisma.$queryRaw<any[]>`INSERT INTO "PricingPlan" ("name","slug","description","price","currency","features","ctaLabel","ctaHref","isPopular","isPublished","sortOrder") VALUES (${data.name},${data.slug},${data.description},${data.price},${data.currency},${JSON.stringify(data.features)}::jsonb,${data.ctaLabel},${data.ctaHref},${data.isPopular},${data.isPublished},${data.sortOrder}) RETURNING *`;revalidatePath("/pricing");revalidatePath("/");return NextResponse.json(rows[0],{status:201})}catch(error){console.error("Unable to create pricing plan:",error);return NextResponse.json({error:"Unable to create pricing plan."},{status:500})}}
