@@ -8,20 +8,32 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!admin.ok) return admin.response;
 
   const { id } = await params;
-  const website = await prisma.website.findUnique({ where: { id } });
+  const website = await prisma.website.findUnique({ where: { id }, include: { video: true } });
   if (!website) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(website);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin(request);
+
   if (!admin.ok) return admin.response;
 
   const { id } = await params;
-  const body = await request.json();
+  const existing = await prisma.website.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await request.json().catch(() => ({}));
   const parsed = websiteSchema.safeParse({
     title: body?.title ?? "",
     summary: body?.summary ?? "",
+    description: body?.description ?? "",
+    system: body?.system ?? "",
+    details: body?.details ?? "",
+    features: body?.features ?? "",
+    targetAudience: body?.targetAudience ?? "",
+    responsive: body?.responsive ?? "",
+    age: body?.age ?? "",
+    gameType: body?.gameType ?? "",
     category: body?.category ?? "",
     price: Number(body?.price ?? 0),
     currency: body?.currency ?? "",
@@ -34,15 +46,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const metadata = parsed.data;
-  const updated = await prisma.website.update({ where: { id }, data: {
-    title: metadata.title.trim(),
-    summary: metadata.summary?.trim() || null,
-    category: metadata.category.trim(),
-    price: metadata.price ?? 0,
-    currency: metadata.currency.trim(),
-    websiteUrl: metadata.websiteUrl.trim(),
-    isPublished: Boolean(metadata.isPublished),
-  }});
+  const updated = await prisma.website.update({
+    where: { id },
+    data: {
+      title: metadata.title.trim(),
+      summary: metadata.summary?.trim() || null,
+      description: metadata.description?.trim() || null,
+      system: metadata.system?.trim() || null,
+      details: metadata.details?.trim() || null,
+      features: metadata.features?.trim() || null,
+      targetAudience: metadata.targetAudience?.trim() || null,
+      responsive: metadata.responsive?.trim() || null,
+      age: metadata.age?.trim() || null,
+      gameType: metadata.gameType?.trim() || null,
+      category: metadata.category.trim(),
+      price: metadata.price ?? 0,
+      currency: metadata.currency.trim(),
+      websiteUrl: metadata.websiteUrl.trim(),
+      isPublished: Boolean(metadata.isPublished),
+    },
+    include: { video: true },
+  });
 
   return NextResponse.json(updated);
 }
