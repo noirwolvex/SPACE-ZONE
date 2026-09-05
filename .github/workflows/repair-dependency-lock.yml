@@ -6,13 +6,13 @@ on:
     paths:
       - package.json
       - .github/repair-dependencies
+      - .github/workflows/repair-dependency-lock.yml
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: ${{ hashFiles('.github/repair-dependencies') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,18 +21,27 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check repair marker
+        id: marker
+        shell: bash
+        run: test -f .github/repair-dependencies
+
       - name: Setup Node.js
+        if: steps.marker.outcome == 'success'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Regenerate lockfile
+        if: steps.marker.outcome == 'success'
         run: npm install --package-lock-only --ignore-scripts
 
       - name: Remove one-time repair files
+        if: steps.marker.outcome == 'success'
         run: rm -f .github/repair-dependencies .github/workflows/repair-dependency-lock.yml
 
       - name: Commit repaired lockfile
+        if: steps.marker.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
