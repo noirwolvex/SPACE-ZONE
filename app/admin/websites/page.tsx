@@ -7,7 +7,7 @@ import type { WebsiteFormValues, WebsiteRecord } from "@/lib/website-types";
 
 const initialForm: WebsiteFormValues = {
   title: "", summary: "", description: "", system: "", details: "", features: "", targetAudience: "",
-  responsive: "Fully Responsive", age: "", customAge: "", gameType: "", customGameType: "", category: "", customCategory: "",
+  responsive: "Fully Responsive", age: "", customAge: "", gameType: "", customGameType: "", category: "",
   price: "0", currency: "BHD", websiteUrl: "", isPublished: true,
 };
 
@@ -45,8 +45,10 @@ export default function AdminWebsitesPage() {
     ? (form.customGameType?.trim() ?? "")
     : (form.gameType?.trim() ?? "");
   const isGame = effectiveCategory.toUpperCase() === "GAME";
+  const isCurrentCategoryPreset = WEBSITE_CATEGORIES.some((category) => category === form.category);
 
   useEffect(() => { void loadWebsites(); }, []);
+  useEffect(() => () => imagePreviews.forEach((url) => URL.revokeObjectURL(url)), [imagePreviews]);
   useEffect(() => () => { if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); }, [videoPreviewUrl]);
 
   async function loadWebsites() {
@@ -69,11 +71,10 @@ export default function AdminWebsitesPage() {
   function onImagesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []).slice(0, 5);
     setSelectedImageFiles(files); setImagePreviews(files.map((file) => URL.createObjectURL(file)));
-    setStatus(files.length > 5 ? "Only the first 5 images were selected." : "");
+    setStatus((event.target.files?.length ?? 0) > 5 ? "Only the first 5 images were selected." : "");
   }
   function onVideoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     setSelectedVideoFile(file);
     setVideoPreviewUrl(file ? URL.createObjectURL(file) : "");
     if (file && file.size > 25 * 1024 * 1024) setStatus("The video must be smaller than 25MB.");
@@ -119,10 +120,10 @@ export default function AdminWebsitesPage() {
       title: w.title || "", summary: w.summary || "", description: w.description || "", system: w.system || "", details: w.details || "",
       features: w.features || "", targetAudience: w.targetAudience || "", responsive: w.responsive || "Fully Responsive",
       age: ageParts.preset, customAge: ageParts.custom, gameType: gameTypeParts.preset || (gameTypeParts.custom ? "CUSTOM" : ""), customGameType: gameTypeParts.custom,
-      category: categoryParts.preset, customCategory: "",
+      category: categoryParts.preset || categoryParts.custom,
       price: String(w.price ?? 0), currency: w.currency || "BHD", websiteUrl: w.websiteUrl || "", isPublished: Boolean(w.isPublished),
     });
-    setSelectedImageFiles([]); setImagePreviews([]); setSelectedVideoFile(null); if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); setVideoPreviewUrl("");
+    setSelectedImageFiles([]); setImagePreviews([]); setSelectedVideoFile(null); setVideoPreviewUrl("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (videoInputRef.current) videoInputRef.current.value = "";
     setStatus("Editing website. Choose a new video only if you want to replace the current one.");
@@ -147,7 +148,7 @@ export default function AdminWebsitesPage() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-medium"><span className="mb-2 block">Title</span><input name="title" value={form.title} onChange={handleFieldChange} className={inputClass} /></label>
-            <label className="text-sm font-medium"><span className="mb-2 block">Website Category</span><select name="category" value={form.category} onChange={handleFieldChange} className={inputClass}><option value="">Select a category</option>{WEBSITE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+            <label className="text-sm font-medium"><span className="mb-2 block">Website Category</span><select name="category" value={form.category} onChange={handleFieldChange} className={inputClass}><option value="">Select a category</option>{!isCurrentCategoryPreset && form.category ? <option value={form.category}>Current: {form.category}</option> : null}{WEBSITE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
             <label className="text-sm font-medium"><span className="mb-2 block">Age</span><select name="age" value={form.age || ""} onChange={handleFieldChange} disabled={!isGame} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`}><option value="">Select age</option>{WEBSITE_GAME_AGES.map((age) => <option key={age} value={age}>{age === "3-5" ? "Ages 3–5" : age === "6-8" ? "Ages 6–8" : age === "9-12" ? "Ages 9–12" : "Ages 13+"}</option>)}</select></label>
             <label className="text-sm font-medium"><span className="mb-2 block">Custom Age</span><input name="customAge" value={form.customAge || ""} onChange={handleFieldChange} disabled={!isGame} placeholder="Type any age, e.g. Ages 4–7 or 10+" className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`} /><span className="mt-1 block text-xs text-slate-500">Use this for any custom age range. It replaces the preset age.</span></label>
             <div className="text-sm font-medium"><span className="mb-2 block">Game Type</span><select name="gameType" value={form.gameType || ""} onChange={handleFieldChange} disabled={!isGame} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`}><option value="">Select game type</option>{WEBSITE_GAME_TYPES.map((type) => <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>)}</select>{form.gameType === "CUSTOM" ? <input name="customGameType" value={form.customGameType || ""} onChange={handleFieldChange} disabled={!isGame} placeholder="Type your own game type, e.g. Math Challenge" className={`${inputClass} mt-3 disabled:cursor-not-allowed disabled:opacity-50`} /> : null}<span className="mt-1 block text-xs text-slate-500">Custom Game Type appears in the Games type filter.</span></div>
