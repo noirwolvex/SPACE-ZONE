@@ -26,6 +26,18 @@ function getFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function getFormStringArray(formData: FormData, key: string) {
+  const value = getFormString(formData, key);
+  return value.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+}
+
+function getNullableYear(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
 function extensionForMimeType(type: string) {
   switch (type) {
     case "image/jpeg": return "jpg";
@@ -65,6 +77,11 @@ export async function POST(request: NextRequest) {
       age: getFormString(formData, "age"),
       gameType: getFormString(formData, "gameType"),
       category: getFormString(formData, "category"),
+      status: getFormString(formData, "status") || "LIVE",
+      techStack: getFormStringArray(formData, "techStack"),
+      featured: getFormString(formData, "featured") === "true",
+      launchYear: getNullableYear(getFormString(formData, "launchYear")),
+      keyFeatures: getFormStringArray(formData, "keyFeatures"),
       price: Number(getFormString(formData, "price") || 0),
       currency: getFormString(formData, "currency"),
       websiteUrl: getFormString(formData, "websiteUrl"),
@@ -133,6 +150,11 @@ export async function POST(request: NextRequest) {
         responsive: parsed.data.responsive?.trim() || null,
         age: parsed.data.age?.trim() || null,
         gameType: parsed.data.gameType?.trim() || null,
+        status: parsed.data.status,
+        techStack: parsed.data.techStack ?? [],
+        featured: Boolean(parsed.data.featured),
+        launchYear: parsed.data.launchYear ?? null,
+        keyFeatures: parsed.data.keyFeatures ?? [],
         category: parsed.data.category.trim(),
         price: parsed.data.price ?? 0,
         currency: parsed.data.currency.trim(),
