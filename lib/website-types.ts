@@ -13,6 +13,11 @@ export interface WebsiteRecord {
   responsive?: string | null;
   age?: string | null;
   gameType?: string | null;
+  status?: string | null;
+  techStack?: string[];
+  featured?: boolean;
+  launchYear?: number | null;
+  keyFeatures?: string[];
   price: number | string;
   currency: string;
   category?: string | null;
@@ -37,6 +42,11 @@ export type WebsiteFormValues = {
   customGameType?: string;
   category: string;
   customCategory?: string;
+  status: string;
+  techStackText?: string;
+  featured?: boolean;
+  launchYear?: string;
+  keyFeaturesText?: string;
   price?: string;
   currency: string;
   websiteUrl: string;
