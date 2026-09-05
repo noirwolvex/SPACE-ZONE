@@ -61,6 +61,12 @@ model PortfolioProject {
   slug        String       @unique
   summary     String
   outcome     String?
+  challenge   String?
+  solution    String?
+  process     String[]     @default([])
+  techStack   String[]     @default([])
+  industry    String?
+  duration    String?
   gallery     String[]
   tags        String[]
   services    String[]     @default([])
@@ -70,6 +76,8 @@ model PortfolioProject {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
+
+  @@index([industry])
 }
 
 model BlogPost {
@@ -110,7 +118,7 @@ model StartupTool {
   categoryId    String
   seoId         String?          @unique
   createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  updatedAt     DateTime          @updatedAt
   orderItems    OrderItem[]
   files         StartupToolFile[]
   category      ToolCategory      @relation(fields: [categoryId], references: [id])
@@ -195,7 +203,7 @@ model Payment {
 }
 
 model Download {
-  id            String           @id @default(cuid())
+  id            String           @id
   orderItemId   String
   fileId        String?
   token         String           @unique
@@ -213,7 +221,7 @@ model ContactMessage {
   id             String   @id @default(cuid())
   name           String
   email          String
-  phone           String?
+  phone          String?
   contactType    String   @default("Inquiry")
   message        String
   details        String?
@@ -389,7 +397,6 @@ model WebsitePurchase {
   @@unique([customerId, websiteId])
   @@index([customerId, status])
   @@index([websiteId])
-  @@index([transactionId])
 }
 
 model NewsletterSubscriber {
