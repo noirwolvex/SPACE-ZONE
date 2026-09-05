@@ -81,14 +81,14 @@ model PortfolioProject {
 }
 
 model BlogPost {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
-  slug        String       @unique
+  slug        String   @unique
   content     String
   category    String
-  seoId       String?      @unique
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  seoId       String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -267,7 +267,7 @@ model Book {
   features       String?
   targetAudience String?
   bookSize       String?
-  pageCount      Int?
+  pageCount     Int?
   seriesParts    String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -361,6 +361,11 @@ model Website {
   responsive     String?
   age            String?
   gameType       String?
+  status         String   @default("LIVE")
+  techStack      String[] @default([])
+  featured       Boolean  @default(false)
+  launchYear     Int?
+  keyFeatures    String[] @default([])
   price          Decimal  @db.Decimal(12, 3)
   currency       String
   category       String?
@@ -412,8 +417,8 @@ model NewsletterSubscriber {
 }
 
 model PageVisit {
-  id        String   @id @default(cuid())
-  path      String
+  id      String   @id @default(cuid())
+  path    String
   userAgent String?
   createdAt DateTime @default(now())
 }
