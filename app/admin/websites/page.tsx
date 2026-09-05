@@ -2,12 +2,13 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { RefreshCcw, ShieldCheck, Trash2 } from "lucide-react";
-import { WEBSITE_CATEGORIES, WEBSITE_GAME_AGES, WEBSITE_GAME_TYPES, WEBSITE_RESPONSIVE_OPTIONS } from "@/lib/website-validation";
+import { WEBSITE_CATEGORIES, WEBSITE_GAME_AGES, WEBSITE_GAME_TYPES, WEBSITE_RESPONSIVE_OPTIONS, WEBSITE_STATUSES } from "@/lib/website-validation";
 import type { WebsiteFormValues, WebsiteRecord } from "@/lib/website-types";
 
 const initialForm: WebsiteFormValues = {
   title: "", summary: "", description: "", system: "", details: "", features: "", targetAudience: "",
   responsive: "Fully Responsive", age: "", customAge: "", gameType: "", customGameType: "", category: "",
+  status: "LIVE", techStackText: "", featured: false, launchYear: "", keyFeaturesText: "",
   price: "0", currency: "BHD", websiteUrl: "", isPublished: true,
 };
 
@@ -22,6 +23,7 @@ function splitPresetOrCustom(value: string | null | undefined, presets: readonly
   const normalized = value?.trim() ?? "";
   return presets.includes(normalized) ? { preset: normalized, custom: "" } : { preset: "", custom: normalized };
 }
+function joinList(values?: string[]) { return (values ?? []).join(", "); }
 
 export default function AdminWebsitesPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,9 +43,7 @@ export default function AdminWebsitesPage() {
 
   const effectiveCategory = form.category?.trim() ?? "";
   const effectiveAge = (form.customAge?.trim() || form.age?.trim() || "").trim();
-  const effectiveGameType = form.gameType === "CUSTOM"
-    ? (form.customGameType?.trim() ?? "")
-    : (form.gameType?.trim() ?? "");
+  const effectiveGameType = form.gameType === "CUSTOM" ? (form.customGameType?.trim() ?? "") : (form.gameType?.trim() ?? "");
   const isGame = effectiveCategory.toUpperCase() === "GAME";
   const isCurrentCategoryPreset = WEBSITE_CATEGORIES.some((category) => category === form.category);
 
@@ -75,10 +75,8 @@ export default function AdminWebsitesPage() {
   }
   function onVideoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    setSelectedVideoFile(file);
-    setVideoPreviewUrl(file ? URL.createObjectURL(file) : "");
-    if (file && file.size > 25 * 1024 * 1024) setStatus("The video must be smaller than 25MB.");
-    else setStatus("");
+    setSelectedVideoFile(file); setVideoPreviewUrl(file ? URL.createObjectURL(file) : "");
+    if (file && file.size > 25 * 1024 * 1024) setStatus("The video must be smaller than 25MB."); else setStatus("");
   }
 
   async function submit() {
@@ -94,17 +92,19 @@ export default function AdminWebsitesPage() {
       const data = new FormData();
       for (const file of selectedImageFiles.slice(0, 5)) data.append("images", file);
       if (selectedVideoFile) data.append("video", selectedVideoFile);
+      const techStack = (form.techStackText || "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+      const keyFeatures = (form.keyFeaturesText || "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
       data.append("title", form.title); data.append("summary", form.summary || ""); data.append("description", form.description || "");
       data.append("system", form.system || ""); data.append("details", form.details || ""); data.append("features", form.features || "");
-      data.append("targetAudience", form.targetAudience || ""); data.append("responsive", form.responsive || ""); data.append("age", age);
-      data.append("gameType", gameType); data.append("category", category); data.append("price", String(form.price || "0"));
-      data.append("currency", form.currency || "BHD"); data.append("websiteUrl", form.websiteUrl); data.append("isPublished", String(Boolean(form.isPublished)));
+      data.append("targetAudience", form.targetAudience || ""); data.append("responsive", form.responsive || ""); data.append("age", age); data.append("gameType", gameType);
+      data.append("category", category); data.append("status", form.status || "LIVE"); data.append("techStack", techStack.join("\n"));
+      data.append("featured", String(Boolean(form.featured))); data.append("launchYear", form.launchYear || ""); data.append("keyFeatures", keyFeatures.join("\n"));
+      data.append("price", String(form.price || "0")); data.append("currency", form.currency || "BHD"); data.append("websiteUrl", form.websiteUrl); data.append("isPublished", String(Boolean(form.isPublished)));
       if (editingId) data.append("websiteId", editingId);
       const response = await fetch("/api/admin/websites/upload", { method: "POST", headers: authHeaders(), body: data });
       if (!response.ok) throw new Error(await getResponseErrorMessage(response));
       setStatus(editingId ? "Updated." : "Created."); setSelectedImageFiles([]); setImagePreviews([]); setSelectedVideoFile(null); setVideoPreviewUrl(""); setEditingId(null); setForm(initialForm);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (videoInputRef.current) videoInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = ""; if (videoInputRef.current) videoInputRef.current.value = "";
       await loadWebsites();
     } catch (err) { setStatus(String(err)); } finally { setIsLoading(false); }
   }
@@ -117,15 +117,13 @@ export default function AdminWebsitesPage() {
     const gameTypeParts = storedGameType.toUpperCase() === "CUSTOM" ? { preset: "CUSTOM", custom: "" } : splitPresetOrCustom(storedGameType, presetTypes);
     setEditingId(w.id);
     setForm({
-      title: w.title || "", summary: w.summary || "", description: w.description || "", system: w.system || "", details: w.details || "",
-      features: w.features || "", targetAudience: w.targetAudience || "", responsive: w.responsive || "Fully Responsive",
-      age: ageParts.preset, customAge: ageParts.custom, gameType: gameTypeParts.preset || (gameTypeParts.custom ? "CUSTOM" : ""), customGameType: gameTypeParts.custom,
-      category: categoryParts.preset || categoryParts.custom,
+      title: w.title || "", summary: w.summary || "", description: w.description || "", system: w.system || "", details: w.details || "", features: w.features || "", targetAudience: w.targetAudience || "",
+      responsive: w.responsive || "Fully Responsive", age: ageParts.preset, customAge: ageParts.custom, gameType: gameTypeParts.preset || (gameTypeParts.custom ? "CUSTOM" : ""), customGameType: gameTypeParts.custom,
+      category: categoryParts.preset || categoryParts.custom, status: w.status || "LIVE", techStackText: joinList(w.techStack), featured: Boolean(w.featured), launchYear: w.launchYear ? String(w.launchYear) : "", keyFeaturesText: joinList(w.keyFeatures),
       price: String(w.price ?? 0), currency: w.currency || "BHD", websiteUrl: w.websiteUrl || "", isPublished: Boolean(w.isPublished),
     });
     setSelectedImageFiles([]); setImagePreviews([]); setSelectedVideoFile(null); setVideoPreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = ""; if (videoInputRef.current) videoInputRef.current.value = "";
     setStatus("Editing website. Choose a new video only if you want to replace the current one.");
   }
 
@@ -149,6 +147,11 @@ export default function AdminWebsitesPage() {
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-medium"><span className="mb-2 block">Title</span><input name="title" value={form.title} onChange={handleFieldChange} className={inputClass} /></label>
             <label className="text-sm font-medium"><span className="mb-2 block">Website Category</span><select name="category" value={form.category} onChange={handleFieldChange} className={inputClass}><option value="">Select a category</option>{!isCurrentCategoryPreset && form.category ? <option value={form.category}>Current: {form.category}</option> : null}{WEBSITE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+            <label className="text-sm font-medium"><span className="mb-2 block">Project Status</span><select name="status" value={form.status} onChange={handleFieldChange} className={inputClass}>{WEBSITE_STATUSES.map((value) => <option key={value} value={value}>{value === "IN_DEVELOPMENT" ? "In Development" : value === "COMING_SOON" ? "Coming Soon" : "Live"}</option>)}</select></label>
+            <label className="text-sm font-medium"><span className="mb-2 block">Launch Year</span><input name="launchYear" value={form.launchYear || ""} onChange={handleFieldChange} inputMode="numeric" placeholder="2026" className={inputClass} /></label>
+            <label className="text-sm font-medium md:col-span-2"><span className="mb-2 block">Tech Stack</span><input name="techStackText" value={form.techStackText || ""} onChange={handleFieldChange} placeholder="Next.js, React, Supabase, Prisma" className={inputClass} /><span className="mt-1 block text-xs text-slate-500">Separate technologies with commas.</span></label>
+            <label className="md:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60"><input type="checkbox" name="featured" checked={Boolean(form.featured)} onChange={handleFieldChange} /><span><span className="block text-sm font-semibold">Featured Project</span><span className="text-xs text-slate-500">Use this to highlight the project in the public showcase.</span></span></label>
+            <label className="md:col-span-2 text-sm font-medium"><span className="mb-2 block">Key Features</span><textarea name="keyFeaturesText" value={form.keyFeaturesText || ""} onChange={handleFieldChange} rows={4} placeholder="Fast performance, Admin panel, Authentication, Responsive design" className={inputClass} /><span className="mt-1 block text-xs text-slate-500">Separate features with commas or one feature per line.</span></label>
             <label className="text-sm font-medium"><span className="mb-2 block">Age</span><select name="age" value={form.age || ""} onChange={handleFieldChange} disabled={!isGame} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`}><option value="">Select age</option>{WEBSITE_GAME_AGES.map((age) => <option key={age} value={age}>{age === "3-5" ? "Ages 3–5" : age === "6-8" ? "Ages 6–8" : age === "9-12" ? "Ages 9–12" : "Ages 13+"}</option>)}</select></label>
             <label className="text-sm font-medium"><span className="mb-2 block">Custom Age</span><input name="customAge" value={form.customAge || ""} onChange={handleFieldChange} disabled={!isGame} placeholder="Type any age, e.g. Ages 4–7 or 10+" className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`} /><span className="mt-1 block text-xs text-slate-500">Use this for any custom age range. It replaces the preset age.</span></label>
             <div className="text-sm font-medium"><span className="mb-2 block">Game Type</span><select name="gameType" value={form.gameType || ""} onChange={handleFieldChange} disabled={!isGame} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`}><option value="">Select game type</option>{WEBSITE_GAME_TYPES.map((type) => <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>)}</select>{form.gameType === "CUSTOM" ? <input name="customGameType" value={form.customGameType || ""} onChange={handleFieldChange} disabled={!isGame} placeholder="Type your own game type, e.g. Math Challenge" className={`${inputClass} mt-3 disabled:cursor-not-allowed disabled:opacity-50`} /> : null}<span className="mt-1 block text-xs text-slate-500">Custom Game Type appears in the Games type filter.</span></div>
@@ -175,7 +178,7 @@ export default function AdminWebsitesPage() {
 
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/40 dark:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search websites..." className={inputClass} /><select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className={inputClass}><option value="">All categories</option>{WEBSITE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select><select value={filterPublished} onChange={(e) => setFilterPublished(e.target.value as "all" | "published" | "draft")} className={inputClass}><option value="all">All</option><option value="published">Published</option><option value="draft">Drafts</option></select><button type="button" onClick={() => void loadWebsites()} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Search</button></div>
-          <div className="mt-6 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-slate-200 dark:border-slate-700"><th className="px-3 py-2">Title</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Published</th><th className="px-3 py-2">Actions</th></tr></thead><tbody>{websites.map((website) => <tr key={website.id} className="border-b border-slate-100 dark:border-slate-800"><td className="px-3 py-3 font-medium">{website.title}</td><td className="px-3 py-3">{website.category || "-"}</td><td className="px-3 py-3">{website.isPublished ? "Yes" : "No"}</td><td className="px-3 py-3"><div className="flex gap-2"><button type="button" onClick={() => prepareEdit(website)} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold dark:border-slate-700">Edit</button><button type="button" onClick={() => void remove(website.id)} className="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></td></tr>)}</tbody></table></div>
+          <div className="mt-6 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-slate-200 dark:border-slate-700"><th className="px-3 py-2">Title</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Featured</th><th className="px-3 py-2">Published</th><th className="px-3 py-2">Actions</th></tr></thead><tbody>{websites.map((website) => <tr key={website.id} className="border-b border-slate-100 dark:border-slate-800"><td className="px-3 py-3 font-medium">{website.title}</td><td className="px-3 py-3">{website.category || "-"}</td><td className="px-3 py-3">{website.status === "IN_DEVELOPMENT" ? "In Development" : website.status === "COMING_SOON" ? "Coming Soon" : "Live"}</td><td className="px-3 py-3">{website.featured ? "Yes" : "No"}</td><td className="px-3 py-3">{website.isPublished ? "Yes" : "No"}</td><td className="px-3 py-3"><div className="flex gap-2"><button type="button" onClick={() => prepareEdit(website)} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold dark:border-slate-700">Edit</button><button type="button" onClick={() => void remove(website.id)} className="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></td></tr>)}</tbody></table></div>
         </section>
       </div>
     </main>
