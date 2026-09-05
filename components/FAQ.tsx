@@ -7,7 +7,7 @@ type FAQProps = { page?: string; limit?: number };
 
 export default async function FAQ({ page, limit = 100 }: FAQProps) {
   const normalizedPage = page?.trim();
-  const items = await getFaqs({ publishedOnly: true, ...(normalizedPage ? { page: normalizedPage } : {}), limit });
+  const items = await getFaqs({ publishedOnly: true, limit, ...(normalizedPage ? { page: normalizedPage } : {}) });
   if (!items.length) return null;
 
   return (
