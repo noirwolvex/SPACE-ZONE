@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getWebsiteImageUrl } from "@/lib/website-storage";
 import GameFilters from "@/components/GameFilters";
@@ -88,6 +89,22 @@ export default async function WebsitesPage({
 
   return (
     <main className="flex-1 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#eef2ff_100%)] px-4 py-10 text-slate-900 transition-colors sm:px-6 lg:px-8 dark:bg-[#050505] dark:text-white">
+      <style>{`
+        @keyframes projectCardReveal {
+          from { opacity: 0; transform: translate3d(0, 28px, 0) scale(.985); filter: blur(6px); }
+          to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+        }
+        @keyframes projectCardSheen {
+          0% { transform: translateX(-150%) skewX(-18deg); opacity: 0; }
+          20% { opacity: .16; }
+          55% { opacity: .28; }
+          100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+        }
+        .project-card-reveal { animation: projectCardReveal .78s cubic-bezier(.22,1,.36,1) both; }
+        @media (prefers-reduced-motion: reduce) {
+          .project-card-reveal { animation: none !important; }
+        }
+      `}</style>
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/80 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-indigo-500/20 dark:bg-slate-900/70">
           <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
@@ -121,18 +138,43 @@ export default async function WebsitesPage({
             <div className="col-span-full rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-10 text-center text-slate-500 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50 dark:text-slate-400">No websites available in this category yet.</div>
           ) : (
             filteredSites.map((site, index) => (
-              <article key={site.id} className="group relative cursor-pointer overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_36px_95px_-32px_rgba(79,70,229,0.4)] dark:border-slate-800 dark:bg-slate-900/70">
+              <article key={site.id} style={{ animationDelay: `${Math.min(index, 8) * 85}ms` }} className="project-card-reveal group relative cursor-pointer overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-500 will-change-transform hover:-translate-y-2 hover:scale-[1.01] hover:border-indigo-200 hover:shadow-[0_42px_110px_-34px_rgba(79,70,229,0.45)] dark:border-slate-800/90 dark:bg-slate-900/80 dark:hover:border-indigo-500/30 dark:hover:shadow-[0_42px_110px_-34px_rgba(99,102,241,0.28)]">
                 <Link href={`/websites/${site.slug}`} aria-label={`View ${site.title}`} className="absolute inset-0 z-0 rounded-[32px]" />
                 <div className="relative z-10 pointer-events-none">
-                  <div className="relative h-72 overflow-hidden sm:h-80">
-                    {site.imageUrl ? <img src={site.imageUrl} alt={site.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-end bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 p-6"><div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div></div>}
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/60 to-transparent" />
+                  <div className="group/media relative h-72 overflow-hidden sm:h-[26rem] lg:h-[28rem]">
+                    {site.imageUrl ? <img src={site.imageUrl} alt={site.title} className="h-full w-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-[1.07] group-hover:brightness-[1.06]" /> : <div className="flex h-full items-end bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 p-6"><div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div></div>}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent transition-opacity duration-700 group-hover:from-slate-950/90" />
+                    <div className="pointer-events-none absolute inset-y-[-20%] left-0 w-1/3 -translate-x-[160%] -skew-x-12 bg-white/20 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:animate-[projectCardSheen_1.15s_ease-out]" />
+                    <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 transition-colors duration-500 group-hover:ring-indigo-300/30 dark:group-hover:ring-indigo-400/30" />
+                    <div className="absolute inset-x-0 top-0 flex items-center justify-between p-5 sm:p-6">
+                      <span className="rounded-full border border-white/25 bg-slate-950/35 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white backdrop-blur-md transition-transform duration-500 group-hover:scale-105">{normalizeCategory(site.category)}</span>
+                      <span className="rounded-full border border-white/15 bg-slate-950/25 px-3 py-1 text-xs font-bold tracking-[0.16em] text-white/85 backdrop-blur-md">#{String(index + 1).padStart(2, "0")}</span>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-6 sm:p-7">
+                      <div className="min-w-0">
+                        <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-indigo-200">Selected project</p>
+                        <h3 className="text-3xl font-black tracking-tight text-white transition-transform duration-500 group-hover:-translate-y-1 sm:text-4xl">{site.title}</h3>
+                      </div>
+                      <span className="hidden shrink-0 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition-all duration-500 group-hover:rotate-45 group-hover:bg-indigo-500/70 sm:inline-flex"><ArrowUpRight className="h-5 w-5" /></span>
+                    </div>
                   </div>
-                  <div className="p-7 sm:p-8">
-                    <div className="flex items-center justify-between gap-3"><span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{normalizeCategory(site.category)}</span><span className="text-xs font-semibold text-slate-400">#{String(index + 1).padStart(2, "0")}</span></div>
-                    <h3 className="mt-5 text-3xl font-black tracking-tight text-slate-950 dark:text-white">{site.title}</h3>
-                    <p className="mt-4 line-clamp-4 text-base leading-7 text-slate-600 dark:text-slate-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
-                    <div className="mt-7 flex items-center justify-between gap-4"><span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{site.currency} {Number(site.price).toFixed(3)}</span><Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400">View project</Link></div>
+
+                  <div className="relative p-7 sm:p-8">
+                    <div className="pointer-events-auto flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Project preview</p>
+                        <p className="mt-2 text-base font-semibold text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">From</p>
+                        <p className="mt-1 text-sm font-black text-slate-700 dark:text-slate-200">{site.currency} {Number(site.price).toFixed(3)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-6 flex items-center justify-between gap-4">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 transition-transform duration-500 group-hover:translate-x-1">Explore the full project</span>
+                      <Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-500 hover:bg-indigo-600 hover:shadow-indigo-500/20 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400"><span>View project</span><ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
+                    </div>
+                    <div className="absolute inset-x-7 bottom-0 h-px origin-left scale-x-20 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent transition-transform duration-700 group-hover:scale-x-100" />
                   </div>
                 </div>
               </article>
