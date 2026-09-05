@@ -121,13 +121,37 @@ export default async function WebsiteDetailsPage({ params }: Props) {
             <div className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-600 dark:text-slate-300">{site.description ?? site.summary ?? "No additional description has been added yet."}</div>
           </article>
 
-          <article className="detail-reveal min-w-0 rounded-[30px] border border-slate-200/80 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8" style={{ animationDelay: "260ms" }}>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Capabilities</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">Features</h2>
-            {features.length ? <div className="mt-5 grid gap-3">{features.map((feature) => <div key={feature} className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" /><span className="break-words text-sm font-semibold leading-6 text-slate-700 dark:text-slate-200">{feature}</span></div>)}</div> : <p className="mt-5 text-base leading-8 text-slate-600 dark:text-slate-300">No features have been added yet.</p>}
+          <article className="detail-reveal min-w-0 overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 p-6 shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-[0_25px_70px_-35px_rgba(79,70,229,0.38)] dark:border-slate-800 dark:bg-slate-900/70 sm:p-8" style={{ animationDelay: "260ms" }}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Capabilities</p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">Features</h2>
+              </div>
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/50 dark:text-indigo-200">{features.length} features</span>
+            </div>
+            {features.length ? (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {features.map((feature, index) => (
+                  <div key={feature} className="group min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:bg-indigo-50/70 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-indigo-500/30 dark:hover:bg-indigo-950/30">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-[11px] font-black text-indigo-700 transition group-hover:scale-105 dark:bg-indigo-500/15 dark:text-indigo-200">{String(index + 1).padStart(2, "0")}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="break-words text-sm font-bold leading-6 text-slate-800 dark:text-slate-100">{feature}</span>
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 transition group-hover:scale-110 dark:text-indigo-300" />
+                        </div>
+                        <div className="mt-3 h-px w-10 bg-indigo-200 transition-all duration-300 group-hover:w-full dark:bg-indigo-500/30" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-base leading-8 text-slate-600 dark:text-slate-300">No features have been added yet.</p>
+            )}
           </article>
 
-          <article className="detail-reveal min-w-0 rounded-[30px] border border-slate-200/80 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8 lg:col-span-2" style={{ animationDelay: "320ms" }}>
+          <article className="detail-reveal min-w-0 rounded-[30px] border border-slate-200/80 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8" style={{ animationDelay: "320ms" }}>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Additional Information</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">Details</h2>
             <div className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-600 dark:text-slate-300">{site.details ?? "Project details will appear here."}</div>
