@@ -80,7 +80,7 @@ model BlogPost {
   category    String
   seoId       String?      @unique
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime      @updatedAt
+  updatedAt   DateTime     @updatedAt
   seoMetadata SeoMetadata? @relation(fields: [seoId], references: [id])
 }
 
@@ -113,8 +113,8 @@ model StartupTool {
   updatedAt     DateTime         @updatedAt
   orderItems    OrderItem[]
   files         StartupToolFile[]
-  category      ToolCategory     @relation(fields: [categoryId], references: [id])
-  seoMetadata   SeoMetadata?     @relation(fields: [seoId], references: [id])
+  category      ToolCategory      @relation(fields: [categoryId], references: [id])
+  seoMetadata   SeoMetadata?      @relation(fields: [seoId], references: [id])
 
   @@index([categoryId])
 }
@@ -211,8 +211,8 @@ model Download {
 
 model ContactMessage {
   id             String   @id @default(cuid())
-  name            String
-  email           String
+  name           String
+  email          String
   phone           String?
   contactType    String   @default("Inquiry")
   message        String
@@ -355,8 +355,20 @@ model Website {
   websiteUrl     String
   isPublished    Boolean  @default(false)
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   purchases      WebsitePurchase[]
+  video          WebsiteVideo?
+}
+
+model WebsiteVideo {
+  id        String   @id @default(uuid())
+  websiteId String   @unique
+  videoPath String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
 }
 
 model WebsitePurchase {
