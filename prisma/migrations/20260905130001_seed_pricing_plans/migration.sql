@@ -1,0 +1,5 @@
+INSERT INTO "PricingPlan" ("name","slug","description","price","currency","features","ctaLabel","ctaHref","isPopular","isPublished","sortOrder") VALUES
+('Starter','starter','A focused starting point for a landing page, launch asset, or compact digital project.',120,'BHD','["Focused project scope","Responsive implementation","Launch-ready delivery","One revision cycle"]'::jsonb,'Start a Project','/contact',false,true,10),
+('Business','business','A stronger package for businesses that need a polished digital presence and connected deliverables.',280,'BHD','["Multi-section website or campaign","Responsive implementation","SEO-ready structure","Content and asset setup","Two revision cycles"]'::jsonb,'Choose Business','/contact',true,true,20),
+('Premium','premium','A tailored end-to-end package for larger launches, custom experiences, and strategic digital work.',600,'BHD','["Custom strategy and planning","Advanced website experience","Integrated design system","Performance and SEO foundations","Priority delivery","Ongoing refinement"]'::jsonb,'Talk to SpaceZone','/contact',false,true,30)
+ON CONFLICT ("slug") DO NOTHING;
