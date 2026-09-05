@@ -1,0 +1,42 @@
+name: Repair dependency lock
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - .github/repair-dependencies
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ hashFiles('.github/repair-dependencies') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Regenerate lockfile
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Remove one-time repair files
+        run: rm -f .github/repair-dependencies .github/workflows/repair-dependency-lock.yml
+
+      - name: Commit repaired lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/repair-dependencies .github/workflows/repair-dependency-lock.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Repair dependency lockfile"
+          git push
