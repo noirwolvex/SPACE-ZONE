@@ -10,7 +10,7 @@ function ServiceIcon({ icon }: { icon: EditableService["icon"] }) {
 }
 
 export default async function FeaturedServices() {
-  const services = await getEditableServices();
+  const services = (await getEditableServices()).slice(-4);
 
   return (
     <section className="py-24 relative z-10 transition-colors">
