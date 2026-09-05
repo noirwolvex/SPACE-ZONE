@@ -14,6 +14,8 @@ const categoryCards = [
   { key: "OTHER", label: "other", subtitle: "Everything beyond the core" },
 ] as const;
 
+const coreCategories = new Set(["KIDS", "GAME", "LEARNING", "BUSINESS"]);
+
 function normalizeCategory(value?: string | null) {
   if (!value) return "ALL";
   const normalized = value.trim().toUpperCase();
@@ -69,7 +71,10 @@ export default async function WebsitesPage({
 
   const categoryFilteredSites = selectedCategory === "ALL"
     ? sitesWithImages
-    : sitesWithImages.filter((site) => normalizeCategory(site.category) === selectedCategory);
+    : sitesWithImages.filter((site) => {
+        const category = normalizeCategory(site.category);
+        return selectedCategory === "OTHER" ? !coreCategories.has(category) : category === selectedCategory;
+      });
 
   const filteredSites = selectedCategory === "GAME"
     ? categoryFilteredSites.filter((site) => matchesGameAge(site, selectedAge) && matchesGameType(site, selectedType))
@@ -103,7 +108,7 @@ export default async function WebsitesPage({
         </section>
 
         <section className="rounded-[32px] border border-slate-200/80 bg-white/80 p-5 shadow-[0_24px_70px_-35px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-indigo-500/20 dark:bg-slate-900/60 sm:p-8">
-          <div className="mb-6 flex flex-col gap-4 px-1 md:flex-row md:items-end md:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.32em] text-slate-500 dark:text-slate-400">Project categories</p><h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">Choose your world</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">A cleaner five-part navigation with larger touch targets, stronger hierarchy, and more breathing room.</p></div><span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{selectedCategory === "GAME" ? "GAMES" : selectedCategory}</span></div>
+          <div className="mb-6 flex flex-col gap-4 px-1 md:flex-row md:items-end md:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.32em] text-slate-500 dark:text-slate-400">Project categories</p><h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">Choose your world</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">A cleaner navigation with larger touch targets, stronger hierarchy, and more breathing room.</p></div><span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/60 dark:text-indigo-200">{selectedCategory === "GAME" ? "GAMES" : selectedCategory}</span></div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             {categoryCards.map(({ key, label, subtitle }) => { const isActive = selectedCategory === key; const href = key === "ALL" ? "/websites" : `/websites?category=${encodeURIComponent(key)}`; return <Link key={key} href={href} aria-current={isActive ? "page" : undefined} className={`group relative min-h-[176px] overflow-hidden rounded-[28px] border p-5 text-left transition-all duration-300 sm:min-h-[190px] sm:p-6 ${isActive ? "border-indigo-600 bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-500 text-white shadow-[0_24px_55px_-20px_rgba(79,70,229,0.72)]" : "border-slate-200 bg-slate-50 text-slate-700 shadow-sm hover:-translate-y-1.5 hover:border-indigo-300 hover:bg-white hover:shadow-[0_24px_45px_-24px_rgba(79,70,229,0.5)] dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-indigo-500/40 dark:hover:bg-slate-900"}`}><span className={`absolute -right-10 -top-10 h-24 w-24 rounded-full blur-2xl transition-all duration-500 group-hover:scale-125 ${isActive ? "bg-white/20" : "bg-indigo-400/10"}`} /><span className={`absolute bottom-4 left-5 h-1 w-10 rounded-full transition-all duration-500 group-hover:w-16 ${isActive ? "bg-white/80" : "bg-indigo-500/50"}`} /><div className="relative flex h-full flex-col justify-between gap-6"><span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${isActive ? "bg-white/15 text-white/90" : "border border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"}`}>{key === "ALL" ? "Overview" : "Explore"}</span><div><div className={`text-[1.65rem] font-black tracking-tight sm:text-[1.8rem] ${isActive ? "text-white" : "text-slate-950 dark:text-white"}`}>{label}</div><p className={`mt-2 max-w-[15rem] text-sm leading-6 ${isActive ? "text-indigo-50" : "text-slate-600 dark:text-slate-300"}`}>{subtitle}</p></div></div></Link>; })}
