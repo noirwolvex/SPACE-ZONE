@@ -49,6 +49,19 @@ export type EditableHomePage = {
   finalCtaHref:string;
 };
 
+export type EditableTestimonial = {
+  id?:string;
+  name:string;
+  role:string;
+  company:string;
+  avatarUrl:string;
+  content:string;
+  rating:number;
+  isPublished:boolean;
+  createdAt?:string;
+  updatedAt?:string;
+};
+
 export const DEFAULT_ABOUT_PAGE: EditableAboutPage = {
   badge: "About Space Zone Media",
   heroTitle: "A creative media team for brands that need to look ready everywhere.",
@@ -201,4 +214,21 @@ export async function getEditableHomePage(){
     console.error("Unable to load Home page content:", error);
     return DEFAULT_HOME_PAGE;
   }
+}
+
+function mapTestimonial(row:any):EditableTestimonial{return{id:String(row.id),name:String(row.name??""),role:String(row.role??""),company:String(row.company??""),avatarUrl:String(row.avatarUrl??""),content:String(row.content??""),rating:Math.min(5,Math.max(1,Number(row.rating??5))),isPublished:Boolean(row.isPublished),createdAt:row.createdAt?.toISOString?.()??String(row.createdAt??""),updatedAt:row.updatedAt?.toISOString?.()??String(row.updatedAt??"")}}
+export async function getTestimonials(options:{publishedOnly?:boolean;limit?:number}={}){
+  const limit=Math.min(12,Math.max(1,options.limit??6));
+  const published=options.publishedOnly===true;
+  const rows=await prisma.$queryRaw<any[]>`
+    SELECT * FROM "Testimonial"
+    ${published ? prisma.$queryRawUnsafe('WHERE "isPublished" = true') : prisma.$queryRawUnsafe('')}
+    ORDER BY "createdAt" DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(mapTestimonial);
+}
+export async function getTestimonial(id:string){
+  const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "Testimonial" WHERE "id" = ${id} LIMIT 1`;
+  return rows.length?mapTestimonial(rows[0]):undefined;
 }
