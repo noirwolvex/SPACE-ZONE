@@ -4,6 +4,7 @@ export const WEBSITE_CATEGORIES = ["KIDS", "LEARNING", "GAME", "BUSINESS", "Port
 export const WEBSITE_RESPONSIVE_OPTIONS = ["Fully Responsive", "Partially Responsive", "Desktop Only", "Mobile Only"] as const;
 export const WEBSITE_GAME_AGES = ["3-5", "6-8", "9-12", "13+"] as const;
 export const WEBSITE_GAME_TYPES = ["PUZZLE", "ADVENTURE", "EDUCATIONAL", "ARCADE", "STRATEGY", "CREATIVE", "CUSTOM"] as const;
+export const WEBSITE_STATUSES = ["LIVE", "IN_DEVELOPMENT", "COMING_SOON"] as const;
 
 export const websiteSchema = z.object({
   title: z.string().trim().min(1, "Title is required."),
@@ -17,6 +18,11 @@ export const websiteSchema = z.object({
   age: z.string().trim().max(50, "Age is too long.").optional().or(z.literal("")),
   gameType: z.string().trim().max(100, "Game type is too long.").optional().or(z.literal("")),
   category: z.string().trim().min(1, "Category is required.").max(100, "Category is too long."),
+  status: z.enum(WEBSITE_STATUSES).default("LIVE"),
+  techStack: z.array(z.string().trim().min(1).max(80)).max(20).optional().default([]),
+  featured: z.boolean().default(false),
+  launchYear: z.number().int().min(2000).max(2100).nullable().optional(),
+  keyFeatures: z.array(z.string().trim().min(1).max(120)).max(20).optional().default([]),
   price: z.number().nonnegative().optional(),
   currency: z.string().trim().min(1, "Currency is required."),
   websiteUrl: z.string().url("Website URL must be a valid URL."),
