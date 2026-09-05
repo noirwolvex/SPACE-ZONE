@@ -1,5 +1,6 @@
 import { HelpCircle } from "lucide-react";
 import { getFaqs } from "@/lib/content-store";
+import { getAllPublishedFaqs } from "@/lib/faq-store";
 import FAQList from "@/components/FAQList";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export default async function FAQ({ page, limit = 100 }: FAQProps) {
   const normalizedPage = page?.trim();
   const items = normalizedPage
     ? await getFaqs({ publishedOnly: true, page: normalizedPage, limit })
-    : await getFaqs({ publishedOnly: true, limit });
+    : await getAllPublishedFaqs(limit);
 
   if (!items.length) return null;
 
