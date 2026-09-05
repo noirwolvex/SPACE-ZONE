@@ -1,5 +1,6 @@
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { getFaqs } from "@/lib/content-store";
+import { getAllPublishedFaqs } from "@/lib/faq-store";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,10 @@ type FAQProps = { page?: string; limit?: number };
 
 export default async function FAQ({ page, limit = 100 }: FAQProps) {
   const normalizedPage = page?.trim();
-  const items = await getFaqs({ publishedOnly: true, limit, ...(normalizedPage ? { page: normalizedPage } : {}) });
+  const items = normalizedPage
+    ? await getFaqs({ publishedOnly: true, page: normalizedPage, limit })
+    : await getAllPublishedFaqs(limit);
+
   if (!items.length) return null;
 
   return (
