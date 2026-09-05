@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getWebsiteImageUrl } from "@/lib/website-storage";
+import { getWebsiteImageUrl, getWebsiteVideoUrl } from "@/lib/website-storage";
 import { PurchaseWebsiteButton } from "@/components/websites/PurchaseWebsiteButton";
 
 export const revalidate = 0;
@@ -15,6 +15,10 @@ export default async function WebsiteDetailsPage({ params }: Props) {
 
   const galleryPaths = Array.from(new Set([site.image, ...(site.gallery ?? [])].filter(Boolean))) as string[];
   const gallery = await Promise.all(galleryPaths.slice(0, 5).map((path) => getWebsiteImageUrl(path)));
+  const videoRows = await prisma.$queryRaw<Array<{ videoPath: string }>>`
+    SELECT "videoPath" FROM "WebsiteVideo" WHERE "websiteId" = ${site.id} LIMIT 1
+  `;
+  const videoUrl = await getWebsiteVideoUrl(videoRows[0]?.videoPath);
   const features = site.features?.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) ?? [];
 
   return (
@@ -50,7 +54,7 @@ export default async function WebsiteDetailsPage({ params }: Props) {
               <div className="mt-7 grid gap-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Website Category</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.category ?? "Not specified"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Target Audience</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.targetAudience ?? "Not specified"}</p></div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-950/60 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Responsive</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.responsive ?? "Not specified"}</p></div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Responsive</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.responsive ?? "Not specified"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">System</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.system ?? "Custom website system"}</p></div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Price</p><p className="mt-2 font-semibold text-slate-900 dark:text-white">{site.currency} {site.price.toString()}</p></div>
               </div>
@@ -62,6 +66,18 @@ export default async function WebsiteDetailsPage({ params }: Props) {
             </div>
           </div>
         </section>
+
+        {videoUrl ? (
+          <section className="mt-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">Project Video</p>
+            <div className="mt-4 overflow-hidden rounded-2xl bg-black shadow-lg">
+              <video controls preload="metadata" poster={gallery[0] ?? undefined} className="aspect-video w-full bg-black">
+                <source src={videoUrl} />
+                Your browser does not support video playback.
+              </video>
+            </div>
+          </section>
+        ) : null}
 
         <section className="mt-6 grid gap-6">
           <article className="min-h-64 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">Description</p><div className="mt-4 min-h-64 whitespace-pre-line text-base leading-8 text-slate-600 dark:text-slate-300">{site.description ?? site.summary ?? "No additional description has been added yet."}</div></article>
