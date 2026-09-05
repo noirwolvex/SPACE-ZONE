@@ -19,25 +19,31 @@ export async function uploadWebsiteFile(
   return uploadPublicFile(WEBSITES_STORAGE, filename, fileBuffer, contentType, directory);
 }
 
-export async function getWebsiteImageUrl(imagePath: string | null | undefined) {
-  if (!imagePath) return null;
+async function getWebsiteMediaUrl(filePath: string | null | undefined) {
+  if (!filePath) return null;
 
-  const objectPath = parseStorageObjectPath(WEBSITES_STORAGE, imagePath);
-  if (!objectPath) return imagePath;
+  const objectPath = parseStorageObjectPath(WEBSITES_STORAGE, filePath);
+  if (!objectPath) return filePath;
 
   try {
     const { data, error } = await supabaseAdmin.storage
       .from(WEBSITES_STORAGE.bucket)
       .createSignedUrl(objectPath, 60 * 60);
 
-    if (!error && data?.signedUrl) {
-      return data.signedUrl;
-    }
+    if (!error && data?.signedUrl) return data.signedUrl;
   } catch (error) {
-    console.warn("Failed to create signed URL for website image:", error);
+    console.warn("Failed to create signed URL for website media:", error);
   }
 
-  return imagePath;
+  return filePath;
+}
+
+export async function getWebsiteImageUrl(imagePath: string | null | undefined) {
+  return getWebsiteMediaUrl(imagePath);
+}
+
+export async function getWebsiteVideoUrl(videoPath: string | null | undefined) {
+  return getWebsiteMediaUrl(videoPath);
 }
 
 export async function deleteWebsiteFile(filePath: string) {
