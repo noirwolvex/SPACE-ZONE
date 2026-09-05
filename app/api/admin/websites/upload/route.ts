@@ -91,8 +91,13 @@ export async function POST(request: NextRequest) {
     if (editingId && !existing) return NextResponse.json({ error: "Website not found." }, { status: 404 });
 
     const oldVideoPath = existing?.video?.videoPath ?? null;
+    const oldImagePaths = existing
+      ? Array.from(new Set([existing.image, ...(existing.gallery ?? [])].filter(Boolean))) as string[]
+      : [];
+
     let gallery = existing?.gallery ?? [];
     let imagePath = existing?.image ?? null;
+    let newVideoPath: string | null = null;
     const uploadedPaths: string[] = [];
 
     try {
@@ -107,6 +112,14 @@ export async function POST(request: NextRequest) {
         }
         gallery = uploadedImagePaths.slice(0, MAX_GALLERY_IMAGES);
         imagePath = gallery[0] ?? null;
+      }
+
+      if (hasVideoFile) {
+        const filename = `${randomUUID()}.${extensionForMimeType(videoFile.type)}`;
+        const buffer = Buffer.from(await videoFile.arrayBuffer());
+        const upload = await uploadWebsiteFile(filename, buffer, videoFile.type, "videos");
+        uploadedPaths.push(upload.path);
+        newVideoPath = upload.path;
       }
 
       const sharedData = {
@@ -135,33 +148,32 @@ export async function POST(request: NextRequest) {
             data: { ...sharedData, slug: await generateUniqueWebsiteSlug(parsed.data.title.trim()) },
           });
 
-      if (hasVideoFile) {
-        const filename = `${randomUUID()}.${extensionForMimeType(videoFile.type)}`;
-        const buffer = Buffer.from(await videoFile.arrayBuffer());
-        const upload = await uploadWebsiteFile(filename, buffer, videoFile.type, "videos");
-        uploadedPaths.push(upload.path);
-
+      if (newVideoPath) {
         await prisma.websiteVideo.upsert({
           where: { websiteId: saved.id },
-          update: { videoPath: upload.path },
-          create: { websiteId: saved.id, videoPath: upload.path },
+          update: { videoPath: newVideoPath },
+          create: { websiteId: saved.id, videoPath: newVideoPath },
         });
-
-        if (existing && oldVideoPath && oldVideoPath !== upload.path) {
-          await deleteWebsiteFile(oldVideoPath);
-        }
       }
 
-      if (existing && imageFiles.length) {
-        const oldPaths = Array.from(new Set([existing.image, ...(existing.gallery ?? [])].filter(Boolean)));
-        await Promise.all(oldPaths.filter((oldPath) => !gallery.includes(oldPath!)).map((oldPath) => deleteWebsiteFile(oldPath!)));
+      const stalePaths = [
+        ...(existing && imageFiles.length ? oldImagePaths.filter((path) => !gallery.includes(path)) : []),
+        ...(existing && newVideoPath && oldVideoPath && oldVideoPath !== newVideoPath ? [oldVideoPath] : []),
+      ];
+
+      const cleanupResults = await Promise.allSettled(
+        Array.from(new Set(stalePaths)).map((filePath) => deleteWebsiteFile(filePath))
+      );
+      const cleanupFailures = cleanupResults.filter((result) => result.status === "rejected");
+      if (cleanupFailures.length) {
+        console.error(`Website ${saved.slug} saved, but ${cleanupFailures.length} old storage file(s) could not be removed.`);
       }
 
       return NextResponse.json(saved);
     } catch (error) {
       await Promise.all(uploadedPaths.map((uploadedPath) => deleteWebsiteFile(uploadedPath).catch(() => undefined)));
       console.error("Website save failed:", error);
-      return NextResponse.json({ error: "Failed to save the website. Existing data was preserved." }, { status: 500 });
+      return NextResponse.json({ error: "Failed to save the website. No new storage files were kept." }, { status: 500 });
     }
   } catch (error) {
     console.error("Website upload request failed:", error);
