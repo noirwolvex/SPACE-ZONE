@@ -53,14 +53,7 @@ export default async function GameFilters({ selectedAge, selectedType, dynamicAg
 
   try {
     const gameSites = await prisma.website.findMany({
-      where: {
-        isPublished: true,
-        OR: [
-          { category: "GAME" },
-          { age: { not: null } },
-          { gameType: { not: null } },
-        ],
-      },
+      where: { isPublished: true, category: "GAME" },
       select: { age: true, gameType: true },
     });
 
