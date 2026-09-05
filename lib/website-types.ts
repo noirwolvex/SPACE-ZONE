@@ -13,7 +13,7 @@ export interface WebsiteRecord {
   responsive?: string | null;
   age?: string | null;
   gameType?: string | null;
-  price: number;
+  price: number | string;
   currency: string;
   category?: string | null;
   websiteUrl: string;
