@@ -15,7 +15,7 @@ export const websiteSchema = z.object({
   targetAudience: z.string().trim().optional().or(z.literal("")),
   responsive: z.enum(WEBSITE_RESPONSIVE_OPTIONS).optional().or(z.literal("")),
   age: z.string().trim().max(50, "Age is too long.").optional().or(z.literal("")),
-  gameType: z.enum(WEBSITE_GAME_TYPES).optional().or(z.literal("")),
+  gameType: z.string().trim().max(100, "Game type is too long.").optional().or(z.literal("")),
   category: z.string().trim().min(1, "Category is required.").max(100, "Category is too long."),
   price: z.number().nonnegative().optional(),
   currency: z.string().trim().min(1, "Currency is required."),
