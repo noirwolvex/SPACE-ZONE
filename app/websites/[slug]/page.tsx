@@ -10,15 +10,15 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function WebsiteDetailsPage({ params }: Props) {
   const { slug } = await params;
-  const site = await prisma.website.findFirst({ where: { slug, isPublished: true } });
+  const site = await prisma.website.findFirst({
+    where: { slug, isPublished: true },
+    include: { video: true },
+  });
   if (!site) notFound();
 
   const galleryPaths = Array.from(new Set([site.image, ...(site.gallery ?? [])].filter(Boolean))) as string[];
   const gallery = await Promise.all(galleryPaths.slice(0, 5).map((path) => getWebsiteImageUrl(path)));
-  const videoRows = await prisma.$queryRaw<Array<{ videoPath: string }>>`
-    SELECT "videoPath" FROM "WebsiteVideo" WHERE "websiteId" = ${site.id} LIMIT 1
-  `;
-  const videoUrl = await getWebsiteVideoUrl(videoRows[0]?.videoPath);
+  const videoUrl = await getWebsiteVideoUrl(site.video?.videoPath);
   const features = site.features?.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) ?? [];
 
   return (
