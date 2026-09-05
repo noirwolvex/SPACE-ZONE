@@ -3,9 +3,11 @@ import { getFaqs } from "@/lib/content-store";
 
 export const dynamic = "force-dynamic";
 
-export default async function FAQ({ page = "/", limit = 8 }: { page?: string; limit?: number }) {
-  const normalizedPage = page?.trim() || "/";
-  const items = await getFaqs({ publishedOnly: true, page: normalizedPage, limit });
+type FAQProps = { page?: string; limit?: number };
+
+export default async function FAQ({ page, limit = 100 }: FAQProps) {
+  const normalizedPage = page?.trim();
+  const items = await getFaqs({ publishedOnly: true, ...(normalizedPage ? { page: normalizedPage } : {}), limit });
   if (!items.length) return null;
 
   return (
@@ -23,7 +25,7 @@ export default async function FAQ({ page = "/", limit = 8 }: { page?: string; li
             <details key={item.id} className="group rounded-2xl border border-slate-200 bg-white p-0 shadow-sm transition hover:border-indigo-300 dark:border-indigo-500/20 dark:bg-slate-900/60 dark:hover:border-indigo-400/40">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-5 text-left font-bold text-slate-950 marker:hidden dark:text-white [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 break-words">{item.question}</span>
-                <ChevronDown className="h-5 w-5 shrink-0 text-indigo-600 transition-transform duration-300 group-open:rotate-180 dark:text-indigo-300" />
+                <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-indigo-600 transition-transform duration-300 group-open:rotate-180 dark:text-indigo-300" />
               </summary>
               <div className="break-words whitespace-pre-wrap px-6 pb-6 pr-14 text-base leading-8 text-slate-600 dark:text-slate-300">{item.answer}</div>
             </details>
