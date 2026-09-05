@@ -100,7 +100,7 @@ export default async function WebsitesPage({
         .project-card-reveal { animation: projectCardReveal .78s cubic-bezier(.22,1,.36,1) both; }
         @media (prefers-reduced-motion: reduce) { .project-card-reveal { animation: none !important; } }
       `}</style>
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+      <div className="mx-auto flex max-w-[1500px] flex-col gap-8">
         <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/80 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-indigo-500/20 dark:bg-slate-900/70">
           <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="p-8 sm:p-10 lg:p-12">
@@ -120,21 +120,21 @@ export default async function WebsitesPage({
           {selectedCategory === "GAME" && <GameFilters selectedAge={selectedAge} selectedType={selectedType} />}
         </section>
 
-        <section id="showcase" className="grid gap-8 md:grid-cols-2">
+        <section id="showcase" className="grid gap-8 lg:grid-cols-2">
           {filteredSites.length === 0 ? <div className="col-span-full rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-10 text-center text-slate-500 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50 dark:text-slate-400">No websites available in this category yet.</div> : filteredSites.map((site, index) => (
-            <article key={site.id} style={{ animationDelay: `${Math.min(index, 8) * 85}ms` }} className="project-card-reveal group relative cursor-pointer overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-500 will-change-transform hover:-translate-y-2 hover:scale-[1.01] hover:border-indigo-200 hover:shadow-[0_42px_110px_-34px_rgba(79,70,229,0.45)] dark:border-slate-800/90 dark:bg-slate-900/80 dark:hover:border-indigo-500/30 dark:hover:shadow-[0_42px_110px_-34px_rgba(99,102,241,0.28)]">
+            <article key={site.id} style={{ animationDelay: `${Math.min(index, 8) * 85}ms` }} className="project-card-reveal group relative min-w-0 cursor-pointer overflow-hidden rounded-[32px] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-500 will-change-transform hover:-translate-y-2 hover:scale-[1.01] hover:border-indigo-200 hover:shadow-[0_42px_110px_-34px_rgba(79,70,229,0.45)] dark:border-slate-800/90 dark:bg-slate-900/80 dark:hover:border-indigo-500/30 dark:hover:shadow-[0_42px_110px_-34px_rgba(99,102,241,0.28)]">
               <Link href={`/websites/${site.slug}`} aria-label={`View ${site.title}`} className="absolute inset-0 z-0 rounded-[32px]" />
-              <div className="relative z-10 pointer-events-none">
+              <div className="relative z-10 min-w-0 pointer-events-none">
                 <div className="group/media relative h-72 overflow-hidden sm:h-[26rem] lg:h-[28rem]">
                   {site.imageUrl ? <img src={site.imageUrl} alt={site.title} className="h-full w-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-[1.07] group-hover:brightness-[1.06]" /> : <div className="flex h-full items-end bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 p-6"><div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-white">Featured</div></div>}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent transition-opacity duration-700 group-hover:from-slate-950/90" />
                   <div className="pointer-events-none absolute inset-y-[-20%] left-0 w-1/3 -translate-x-[160%] -skew-x-12 bg-white/20 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:animate-[projectCardSheen_1.15s_ease-out]" />
                   <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 transition-colors duration-500 group-hover:ring-indigo-300/30 dark:group-hover:ring-indigo-400/30" />
                   <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-5 sm:p-6">
-                    <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-white/25 bg-slate-950/35 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white backdrop-blur-md transition-transform duration-500 group-hover:scale-105">{normalizeCategory(site.category)}</span>{site.featured ? <span className="rounded-full border border-amber-300/40 bg-amber-300/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur-md">Featured</span> : null}</div>
-                    <span className="rounded-full border border-white/15 bg-slate-950/25 px-3 py-1 text-xs font-bold tracking-[0.16em] text-white/85 backdrop-blur-md">#{String(index + 1).padStart(2, "0")}</span>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2"><span className="max-w-full rounded-full border border-white/25 bg-slate-950/35 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white backdrop-blur-md transition-transform duration-500 group-hover:scale-105">{normalizeCategory(site.category)}</span>{site.featured ? <span className="rounded-full border border-amber-300/40 bg-amber-300/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-100 backdrop-blur-md">Featured</span> : null}</div>
+                    <span className="shrink-0 rounded-full border border-white/15 bg-slate-950/25 px-3 py-1 text-xs font-bold tracking-[0.16em] text-white/85 backdrop-blur-md">#{String(index + 1).padStart(2, "0")}</span>
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-6 sm:p-7"><div className="min-w-0"><p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-indigo-200">{statusLabel(site.status)}</p><h3 className="text-3xl font-black tracking-tight text-white transition-transform duration-500 group-hover:-translate-y-1 sm:text-4xl">{site.title}</h3></div><span className="hidden shrink-0 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition-all duration-500 group-hover:rotate-45 group-hover:bg-indigo-500/70 sm:inline-flex"><ArrowUpRight className="h-5 w-5" /></span></div>
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-6 sm:p-7"><div className="min-w-0 max-w-[82%]"><p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-indigo-200">{statusLabel(site.status)}</p><h3 className="break-words text-3xl font-black tracking-tight text-white transition-transform duration-500 group-hover:-translate-y-1 sm:text-4xl">{site.title}</h3></div><span className="hidden shrink-0 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition-all duration-500 group-hover:rotate-45 group-hover:bg-indigo-500/70 sm:inline-flex"><ArrowUpRight className="h-5 w-5" /></span></div>
                 </div>
 
                 <div className="relative p-7 sm:p-8">
@@ -142,13 +142,32 @@ export default async function WebsitesPage({
                     <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${statusClass(site.status)}`}>{statusLabel(site.status)}</span>
                     {site.launchYear ? <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300">Launched {site.launchYear}</span> : null}
                   </div>
-                  <div className="pointer-events-auto mt-4 flex items-start justify-between gap-4">
-                    <div className="min-w-0"><p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Project preview</p><p className="mt-2 text-base font-semibold text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p></div>
-                    <div className="shrink-0 text-right"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">From</p><p className="mt-1 text-sm font-black text-slate-700 dark:text-slate-200">{site.currency} {Number(site.price).toFixed(3)}</p></div>
+
+                  <div className="pointer-events-auto mt-5 grid gap-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Project preview</p>
+                      <p className="mt-2 break-words text-base font-semibold leading-7 text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">{site.summary || site.description || "A refined digital experience created by Space Zone Media."}</p>
+                    </div>
+                    <div className="flex min-w-0 flex-wrap items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Starting price</p>
+                        <p className="mt-1 break-words text-base font-black text-slate-700 dark:text-slate-200">{site.currency} {Number(site.price).toFixed(3)}</p>
+                      </div>
+                      <span className="hidden h-10 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
+                      <div className="min-w-0 flex-1 text-right sm:text-left">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Category</p>
+                        <p className="mt-1 break-words text-sm font-bold text-slate-700 dark:text-slate-200">{normalizeCategory(site.category)}</p>
+                      </div>
+                    </div>
                   </div>
-                  {site.keyFeatures?.length ? <div className="mt-5 flex flex-wrap gap-2">{site.keyFeatures.slice(0, 3).map((feature) => <span key={feature} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{feature}</span>)}</div> : null}
-                  {site.techStack?.length ? <div className="mt-3 flex flex-wrap gap-2">{site.techStack.slice(0, 4).map((tech) => <span key={tech} className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-bold text-white dark:bg-white dark:text-slate-950">{tech}</span>)}</div> : null}
-                  <div className="mt-6 flex items-center justify-between gap-4"><span className="text-xs font-semibold text-slate-500 transition-transform duration-500 group-hover:translate-x-1 dark:text-slate-400">Explore the full project</span><Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-500 hover:bg-indigo-600 hover:shadow-indigo-500/20 dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400"><span>View project</span><ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link></div>
+
+                  {site.keyFeatures?.length ? <div className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Key features</p><div className="mt-3 flex min-w-0 flex-wrap gap-2">{site.keyFeatures.slice(0, 4).map((feature) => <span key={feature} className="max-w-full break-words rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold leading-4 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{feature}</span>)}</div></div> : null}
+                  {site.techStack?.length ? <div className="mt-4"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Built with</p><div className="mt-3 flex min-w-0 flex-wrap gap-2">{site.techStack.slice(0, 5).map((tech) => <span key={tech} className="max-w-full break-words rounded-lg bg-slate-950 px-3 py-1.5 text-[10px] font-bold leading-4 text-white dark:bg-white dark:text-slate-950">{tech}</span>)}</div></div> : null}
+
+                  <div className="mt-7 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+                    <span className="text-xs font-semibold leading-5 text-slate-500 transition-transform duration-500 group-hover:translate-x-1 dark:text-slate-400">Explore the full project</span>
+                    <Link href={`/websites/${site.slug}`} className="pointer-events-auto inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-500 hover:bg-indigo-600 hover:shadow-indigo-500/20 sm:w-auto dark:bg-white dark:text-slate-950 dark:hover:bg-indigo-400"><span>View project</span><ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
+                  </div>
                   <div className="absolute inset-x-7 bottom-0 h-px origin-left scale-x-20 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent transition-transform duration-700 group-hover:scale-x-100" />
                 </div>
               </div>
