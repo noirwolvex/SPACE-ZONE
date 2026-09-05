@@ -1,0 +1,6 @@
+import { CheckCircle2 } from "lucide-react";
+import type { HomeWhyItem } from "@/lib/content-store";
+
+export default function HomeWhy({ title, description, items }: { title:string; description:string; items:HomeWhyItem[] }) {
+  return <section className="py-24 relative z-10"><div className="container mx-auto px-4"><div className="mx-auto max-w-3xl text-center"><h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">{title}</h2><p className="mt-4 text-lg leading-8 text-slate-600 dark:text-slate-300">{description}</p></div><div className="mt-12 grid gap-6 md:grid-cols-3">{items.map((item)=><article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:border-indigo-400/50 hover:shadow-lg dark:border-indigo-500/20 dark:bg-slate-900/40 dark:shadow-none"><div className="inline-flex rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-900/30 dark:text-indigo-300"><CheckCircle2 className="h-6 w-6"/></div><h3 className="mt-5 text-xl font-bold text-slate-950 dark:text-white">{item.title}</h3><p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">{item.text}</p></article>)}</div></div></section>;
+}
