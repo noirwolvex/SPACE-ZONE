@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Loader2, Save, X } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import type { EditableHomePage } from "@/lib/content-store";
 
 const emptyWhy = { title:"", text:"" };
