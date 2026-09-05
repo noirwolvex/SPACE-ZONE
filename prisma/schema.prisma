@@ -118,7 +118,7 @@ model StartupTool {
   categoryId    String
   seoId         String?          @unique
   createdAt     DateTime         @default(now())
-  updatedAt     DateTime          @updatedAt
+  updatedAt     DateTime         @updatedAt
   orderItems    OrderItem[]
   files         StartupToolFile[]
   category      ToolCategory      @relation(fields: [categoryId], references: [id])
@@ -181,8 +181,8 @@ model OrderItem {
   orderId   String
   toolId    String
   price     Decimal     @db.Decimal(12, 3)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
   downloads Download[]
   order     Order       @relation(fields: [orderId], references: [id])
   tool      StartupTool @relation(fields: [toolId], references: [id])
@@ -203,7 +203,7 @@ model Payment {
 }
 
 model Download {
-  id            String           @id
+  id            String           @id @default(cuid())
   orderItemId   String
   fileId        String?
   token         String           @unique
