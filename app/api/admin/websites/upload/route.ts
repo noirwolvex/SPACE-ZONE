@@ -142,32 +142,33 @@ export async function POST(request: NextRequest) {
         gallery,
       } as const;
 
-      const saved = existing
-        ? await prisma.website.update({ where: { id: existing.id }, data: sharedData })
-        : await prisma.website.create({
-            data: { ...sharedData, slug: await generateUniqueWebsiteSlug(parsed.data.title.trim()) },
-          });
+      const saved = await prisma.$transaction(async (tx) => {
+        const website = existing
+          ? await tx.website.update({ where: { id: existing.id }, data: sharedData })
+          : await tx.website.create({
+              data: { ...sharedData, slug: await generateUniqueWebsiteSlug(parsed.data.title.trim()) },
+            });
 
-      if (newVideoPath) {
-        await prisma.websiteVideo.upsert({
-          where: { websiteId: saved.id },
-          update: { videoPath: newVideoPath },
-          create: { websiteId: saved.id, videoPath: newVideoPath },
-        });
-      }
+        if (newVideoPath) {
+          await tx.websiteVideo.upsert({
+            where: { websiteId: website.id },
+            update: { videoPath: newVideoPath },
+            create: { websiteId: website.id, videoPath: newVideoPath },
+          });
+        }
+
+        return website;
+      });
 
       const stalePaths = [
         ...(existing && imageFiles.length ? oldImagePaths.filter((path) => !gallery.includes(path)) : []),
         ...(existing && newVideoPath && oldVideoPath && oldVideoPath !== newVideoPath ? [oldVideoPath] : []),
       ];
-
       const cleanupResults = await Promise.allSettled(
         Array.from(new Set(stalePaths)).map((filePath) => deleteWebsiteFile(filePath))
       );
       const cleanupFailures = cleanupResults.filter((result) => result.status === "rejected");
-      if (cleanupFailures.length) {
-        console.error(`Website ${saved.slug} saved, but ${cleanupFailures.length} old storage file(s) could not be removed.`);
-      }
+      if (cleanupFailures.length) console.error(`Website ${saved.slug} saved, but ${cleanupFailures.length} old storage file(s) could not be removed.`);
 
       return NextResponse.json(saved);
     } catch (error) {
