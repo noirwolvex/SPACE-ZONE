@@ -9,6 +9,9 @@ import FAQ from "@/components/FAQ";
 import { getEditableHomePage } from "@/lib/content-store";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Home() {
   const home = await getEditableHomePage();
   return <main className="flex-1 flex flex-col bg-slate-50 dark:bg-[#050505] transition-colors">
