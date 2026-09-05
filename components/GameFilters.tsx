@@ -24,7 +24,6 @@ type FilterOption = { key: string; label: string };
 type Props = {
   selectedAge: string;
   selectedType: string;
-  dynamicAgeOptions?: FilterOption[];
   dynamicTypeOptions?: FilterOption[];
 };
 
@@ -35,43 +34,24 @@ function makeHref(age: string, type: string) {
   return `/websites?${params.toString()}`;
 }
 
-function labelForAge(value: string) {
-  if (value === "3-5") return "Ages 3–5";
-  if (value === "6-8") return "Ages 6–8";
-  if (value === "9-12") return "Ages 9–12";
-  if (value === "13+") return "Ages 13+";
-  return value;
-}
-
 function normalizeKey(value: string) {
   return value.trim().toUpperCase();
 }
 
-export default async function GameFilters({ selectedAge, selectedType, dynamicAgeOptions = [], dynamicTypeOptions = [] }: Props) {
-  let dbAgeOptions = dynamicAgeOptions;
+export default async function GameFilters({ selectedAge, selectedType, dynamicTypeOptions = [] }: Props) {
   let dbTypeOptions = dynamicTypeOptions;
 
   try {
     const gameSites = await prisma.website.findMany({
       where: { isPublished: true, category: "GAME" },
-      select: { age: true, gameType: true },
+      select: { gameType: true },
     });
 
-    const ageValues = [...new Set(gameSites.map((site) => site.age?.trim()).filter((value): value is string => Boolean(value)))];
     const typeValues = [...new Set(gameSites.map((site) => site.gameType?.trim()).filter((value): value is string => Boolean(value)))];
-
-    dbAgeOptions = [...dbAgeOptions, ...ageValues.map((value) => ({ key: value, label: labelForAge(value) }))];
     dbTypeOptions = [...dbTypeOptions, ...typeValues.map((value) => ({ key: value, label: value }))];
   } catch (error) {
-    console.error("Failed to load dynamic game filter options:", error);
+    console.error("Failed to load dynamic game type filter options:", error);
   }
-
-  const mergedAges = [
-    { key: "ALL", label: "All ages" },
-    ...[...ageOptions.slice(1), ...dbAgeOptions]
-      .filter((option, index, all) => all.findIndex((item) => normalizeKey(item.key) === normalizeKey(option.key)) === index)
-      .map((option) => ({ ...option, label: option.label || labelForAge(option.key) })),
-  ];
 
   const mergedTypes = [...typeOptions, ...dbTypeOptions].filter(
     (option, index, all) => all.findIndex((item) => normalizeKey(item.key) === normalizeKey(option.key)) === index
@@ -92,7 +72,7 @@ export default async function GameFilters({ selectedAge, selectedType, dynamicAg
         <div className="rounded-2xl border border-white/80 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-950/30">
           <div className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Age</div>
           <div className="flex flex-wrap gap-2">
-            {mergedAges.map((option) => {
+            {ageOptions.map((option) => {
               const active = selectedAge === normalizeKey(option.key);
               return <Link key={`age-${option.key}`} href={makeHref(option.key, selectedType)} aria-current={active ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-xs font-bold transition-all duration-200 ${active ? "border-sky-600 bg-sky-600 text-white shadow-lg shadow-sky-600/20" : "border-slate-200 bg-white text-slate-600 hover:-translate-y-0.5 hover:border-sky-300 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-500/40 dark:hover:text-sky-300"}`}>{option.label}</Link>;
             })}
