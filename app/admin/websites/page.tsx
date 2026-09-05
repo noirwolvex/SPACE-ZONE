@@ -38,7 +38,9 @@ export default function AdminWebsitesPage() {
 
   const effectiveCategory = (form.customCategory?.trim() || form.category?.trim() || "").trim();
   const effectiveAge = (form.customAge?.trim() || form.age?.trim() || "").trim();
-  const effectiveGameType = (form.gameType === "CUSTOM" ? form.customGameType?.trim() : form.gameType?.trim() || "").trim();
+  const effectiveGameType = form.gameType === "CUSTOM"
+    ? (form.customGameType?.trim() ?? "")
+    : (form.gameType?.trim() ?? "");
   const isGame = effectiveCategory.toUpperCase() === "GAME";
 
   useEffect(() => { void loadWebsites(); }, []);
