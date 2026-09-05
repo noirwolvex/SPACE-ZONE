@@ -20,6 +20,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
+      # Validate the repaired package lock before running project quality checks.
       - name: Checkout
         uses: actions/checkout@v4
 
