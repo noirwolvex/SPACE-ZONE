@@ -8,6 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const links = [
     ["Services", "/admin/services"],
     ["Tools", "/admin"],
+    ["About", "/admin/about"],
     ["Books", "/admin/books"],
     ["Websites", "/admin/websites"],
     ["Portfolio", "/admin/portfolio"],
