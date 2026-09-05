@@ -7,11 +7,17 @@ export async function GET(request: NextRequest) {
   if (!admin.ok) return admin.response;
 
   try {
-    const messages = await prisma.contactMessage.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const messages = await prisma.$queryRaw<any[]>`
+      SELECT
+        "id", "name", "email", "phone", "company", "service", "budget", "timeline",
+        "contactType", "message", "details", "attachmentUrl", "attachmentName",
+        "status", "createdAt", "updatedAt"
+      FROM "ContactMessage"
+      ORDER BY "createdAt" DESC
+    `;
     return NextResponse.json(messages);
   } catch (error) {
+    console.error("Unable to load messages:", error);
     return NextResponse.json({ error: "Unable to load messages." }, { status: 500 });
   }
 }
