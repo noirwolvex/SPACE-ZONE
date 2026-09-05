@@ -8,8 +8,10 @@ import { websiteSchema } from "@/lib/website-validation";
 
 export const runtime = "nodejs";
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE_BYTES = 25 * 1024 * 1024;
 const MAX_GALLERY_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/ogg", "video/quicktime"]);
 
 async function generateUniqueWebsiteSlug(title: string) {
   const baseSlug = slugify(title) || randomUUID();
@@ -30,7 +32,11 @@ function extensionForMimeType(type: string) {
     case "image/png": return "png";
     case "image/webp": return "webp";
     case "image/gif": return "gif";
-    default: return "jpg";
+    case "video/mp4": return "mp4";
+    case "video/webm": return "webm";
+    case "video/ogg": return "ogv";
+    case "video/quicktime": return "mov";
+    default: return "bin";
   }
 }
 
@@ -43,6 +49,8 @@ export async function POST(request: NextRequest) {
   const imageFiles = formData.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
   const legacyImage = formData.get("image");
   if (!imageFiles.length && legacyImage instanceof File && legacyImage.size > 0) imageFiles.push(legacyImage);
+  const videoFile = formData.get("video");
+  const hasVideoFile = videoFile instanceof File && videoFile.size > 0;
 
   const parsed = websiteSchema.safeParse({
     title: getFormString(formData, "title"),
@@ -66,20 +74,29 @@ export async function POST(request: NextRequest) {
   if (imageFiles.length > MAX_GALLERY_IMAGES) return NextResponse.json({ error: `You can upload up to ${MAX_GALLERY_IMAGES} images.` }, { status: 400 });
 
   for (const file of imageFiles) {
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      return NextResponse.json({ error: "Only JPG, PNG, WEBP, and GIF images are allowed." }, { status: 400 });
-    }
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      return NextResponse.json({ error: "Each image must be smaller than 5MB." }, { status: 400 });
-    }
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) return NextResponse.json({ error: "Only JPG, PNG, WEBP, and GIF images are allowed." }, { status: 400 });
+    if (file.size > MAX_IMAGE_SIZE_BYTES) return NextResponse.json({ error: "Each image must be smaller than 5MB." }, { status: 400 });
+  }
+
+  if (hasVideoFile) {
+    if (!ALLOWED_VIDEO_TYPES.has(videoFile.type)) return NextResponse.json({ error: "Only MP4, WEBM, OGG, and MOV videos are allowed." }, { status: 400 });
+    if (videoFile.size > MAX_VIDEO_SIZE_BYTES) return NextResponse.json({ error: "The video must be smaller than 25MB." }, { status: 400 });
   }
 
   const editingId = websiteId.trim() || null;
   const existing = editingId ? await prisma.website.findUnique({ where: { id: editingId } }) : null;
   if (editingId && !existing) return NextResponse.json({ error: "Website not found." }, { status: 404 });
 
+  const existingVideoRows = existing
+    ? await prisma.$queryRaw<Array<{ videoPath: string }>>`
+        SELECT "videoPath" FROM "WebsiteVideo" WHERE "websiteId" = ${existing.id} LIMIT 1
+      `
+    : [];
+  const oldVideoPath = existingVideoRows[0]?.videoPath ?? null;
+
   let gallery = existing?.gallery ?? [];
   let imagePath = existing?.image ?? null;
+  let videoPath = oldVideoPath;
   const uploadedPaths: string[] = [];
 
   try {
@@ -92,6 +109,14 @@ export async function POST(request: NextRequest) {
       }
       gallery = uploadedPaths.slice(0, MAX_GALLERY_IMAGES);
       imagePath = gallery[0] ?? null;
+    }
+
+    if (hasVideoFile) {
+      const filename = `${randomUUID()}.${extensionForMimeType(videoFile.type)}`;
+      const buffer = Buffer.from(await videoFile.arrayBuffer());
+      const upload = await uploadWebsiteFile(filename, buffer, videoFile.type, "videos");
+      uploadedPaths.push(upload.path);
+      videoPath = upload.path;
     }
 
     const sharedData = {
@@ -120,13 +145,22 @@ export async function POST(request: NextRequest) {
           data: { ...sharedData, slug: await generateUniqueWebsiteSlug(parsed.data.title.trim()) },
         });
 
+    if (videoPath) {
+      await prisma.$executeRaw`
+        INSERT INTO "WebsiteVideo" ("id", "websiteId", "videoPath")
+        VALUES (${randomUUID()}, ${saved.id}, ${videoPath})
+        ON CONFLICT ("websiteId") DO UPDATE
+        SET "videoPath" = EXCLUDED."videoPath", "updatedAt" = CURRENT_TIMESTAMP
+      `;
+    }
+
     if (existing && imageFiles.length) {
       const oldPaths = Array.from(new Set([existing.image, ...(existing.gallery ?? [])].filter(Boolean)));
-      await Promise.all(
-        oldPaths
-          .filter((oldPath) => !gallery.includes(oldPath!))
-          .map((oldPath) => deleteWebsiteFile(oldPath!))
-      );
+      await Promise.all(oldPaths.filter((oldPath) => !gallery.includes(oldPath!)).map((oldPath) => deleteWebsiteFile(oldPath!)));
+    }
+
+    if (existing && hasVideoFile && oldVideoPath && oldVideoPath !== videoPath) {
+      await deleteWebsiteFile(oldVideoPath);
     }
 
     return NextResponse.json(saved);
