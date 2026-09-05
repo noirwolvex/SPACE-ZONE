@@ -98,7 +98,16 @@ export async function getEditableStartupTool(slug:string){const record=await pri
 export async function getEditableAboutPage(){
   try {
     const rows = await prisma.$queryRaw<any[]>`SELECT * FROM "AboutPageContent" WHERE "id" = 'default' LIMIT 1`;
-    return rows.length ? sanitizeAbout(rows[0]) : DEFAULT_ABOUT_PAGE;
+    if (!rows.length) return DEFAULT_ABOUT_PAGE;
+    const row = rows[0];
+    return sanitizeAbout({
+      ...row,
+      stats: [
+        { label: row.focusLabel, value: row.focusValue },
+        { label: row.approachLabel, value: row.approachValue },
+        { label: row.outputLabel, value: row.outputValue },
+      ],
+    });
   } catch (error) {
     console.error("Unable to load About page content:", error);
     return DEFAULT_ABOUT_PAGE;
