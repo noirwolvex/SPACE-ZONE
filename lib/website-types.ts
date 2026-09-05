@@ -34,6 +34,7 @@ export type WebsiteFormValues = {
   age?: string;
   customAge?: string;
   gameType?: string;
+  customGameType?: string;
   category: string;
   customCategory?: string;
   price?: string;
