@@ -3,7 +3,7 @@ import Image from "next/image";
 import { getEditableStartupTools } from "@/lib/content-store";
 
 export default async function FeaturedTools() {
-  const startupTools = await getEditableStartupTools();
+  const startupTools = (await getEditableStartupTools()).slice(-4);
 
   return (
     <section className="py-24 relative z-10 transition-colors">
