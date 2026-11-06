@@ -58,12 +58,6 @@ export default function AdminMessages() {
   }
 
   const projectRequests = messages.filter((message) => message.contactType === "Project Request");
-  const projectFields: Array<{ icon: LucideIcon; label: string; value: string | null | undefined }> = [
-    { icon: Building2, label: "Company", value: messages[0]?.company },
-    { icon: BriefcaseBusiness, label: "Service", value: messages[0]?.service },
-    { icon: WalletCards, label: "Budget", value: messages[0]?.budget },
-    { icon: Clock3, label: "Timeline", value: messages[0]?.timeline },
-  ];
 
   return (
     <main className="min-h-[90vh] flex-1 bg-slate-50 px-4 py-10 text-slate-900 dark:bg-[#050505] dark:text-white">
