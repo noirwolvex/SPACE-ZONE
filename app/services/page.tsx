@@ -13,7 +13,7 @@ function ServiceIcon({ icon }: { icon: EditableService["icon"] }) {
 }
 
 export default async function ServicesPage() {
-  const services = await getEditableServices();
+  const services = await getEditableServices({fallbackOnUnavailable:true});
 
   return (
     <main className="min-h-[90vh] flex-1 bg-slate-50 pt-24 pb-16 text-slate-900 transition-colors dark:bg-[#050505] dark:text-white">
