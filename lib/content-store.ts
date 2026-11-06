@@ -25,7 +25,7 @@ function mapToolRecord(record:any):EditableStartupTool{const price=Number(record
 function isRecord(value:unknown):value is Record<string,unknown>{return typeof value === "object" && value !== null}
 function sanitizeAbout(row:any):EditableAboutPage{const stats=Array.isArray(row.stats)?row.stats:DEFAULT_ABOUT_PAGE.stats;const offerings=Array.isArray(row.offerings)?row.offerings:DEFAULT_ABOUT_PAGE.offerings;const values=Array.isArray(row.values)?row.values:DEFAULT_ABOUT_PAGE.values;const workflow=Array.isArray(row.workflow)?row.workflow.filter((item:unknown)=>typeof item==="string"):DEFAULT_ABOUT_PAGE.workflow;return{id:row.id,badge:String(row.badge??DEFAULT_ABOUT_PAGE.badge),heroTitle:String(row.heroTitle??DEFAULT_ABOUT_PAGE.heroTitle),heroDescription:String(row.heroDescription??DEFAULT_ABOUT_PAGE.heroDescription),stats:stats.filter(isRecord).map((item:Record<string,unknown>)=>({label:String(item.label??""),value:String(item.value??"")})),whatWeDoTitle:String(row.whatWeDoTitle??DEFAULT_ABOUT_PAGE.whatWeDoTitle),whatWeDoText:String(row.whatWeDoText??DEFAULT_ABOUT_PAGE.whatWeDoText),offerings:offerings.filter(isRecord).map((item:Record<string,unknown>)=>({icon:(item.icon==="megaphone"||item.icon==="layers"||item.icon==="rocket"?item.icon:"printer") as AboutOffering["icon"],title:String(item.title??""),text:String(item.text??"")})),howWeThinkTitle:String(row.howWeThinkTitle??DEFAULT_ABOUT_PAGE.howWeThinkTitle),howWeThinkText:String(row.howWeThinkText??DEFAULT_ABOUT_PAGE.howWeThinkText),values:values.filter(isRecord).map((item:Record<string,unknown>)=>({title:String(item.title??""),text:String(item.text??"")})),workflowTitle:String(row.workflowTitle??DEFAULT_ABOUT_PAGE.workflowTitle),workflow,servicesTitle:String(row.servicesTitle??DEFAULT_ABOUT_PAGE.servicesTitle),ctaTitle:String(row.ctaTitle??DEFAULT_ABOUT_PAGE.ctaTitle),ctaText:String(row.ctaText??DEFAULT_ABOUT_PAGE.ctaText)}}
 function sanitizeHome(row:any):EditableHomePage{const whyItems=Array.isArray(row.whyItems)?row.whyItems:DEFAULT_HOME_PAGE.whyItems;return{id:row.id,badge:String(row.badge??DEFAULT_HOME_PAGE.badge),heroTitle:String(row.heroTitle??DEFAULT_HOME_PAGE.heroTitle),heroHighlight:String(row.heroHighlight??DEFAULT_HOME_PAGE.heroHighlight),heroDescription:String(row.heroDescription??DEFAULT_HOME_PAGE.heroDescription),primaryCtaLabel:String(row.primaryCtaLabel??DEFAULT_HOME_PAGE.primaryCtaLabel),primaryCtaHref:String(row.primaryCtaHref??DEFAULT_HOME_PAGE.primaryCtaHref),secondaryCtaLabel:String(row.secondaryCtaLabel??DEFAULT_HOME_PAGE.secondaryCtaLabel),secondaryCtaHref:String(row.secondaryCtaHref??DEFAULT_HOME_PAGE.secondaryCtaHref),servicesTitle:String(row.servicesTitle??DEFAULT_HOME_PAGE.servicesTitle),servicesDescription:String(row.servicesDescription??DEFAULT_HOME_PAGE.servicesDescription),toolsTitle:String(row.toolsTitle??DEFAULT_HOME_PAGE.toolsTitle),toolsDescription:String(row.toolsDescription??DEFAULT_HOME_PAGE.toolsDescription),portfolioTitle:String(row.portfolioTitle??DEFAULT_HOME_PAGE.portfolioTitle),portfolioDescription:String(row.portfolioDescription??DEFAULT_HOME_PAGE.portfolioDescription),whyTitle:String(row.whyTitle??DEFAULT_HOME_PAGE.whyTitle),whyDescription:String(row.whyDescription??DEFAULT_HOME_PAGE.whyDescription),whyItems:whyItems.filter(isRecord).map((item:Record<string,unknown>)=>({title:String(item.title??""),text:String(item.text??"")})),finalCtaTitle:String(row.finalCtaTitle??DEFAULT_HOME_PAGE.finalCtaTitle),finalCtaDescription:String(row.finalCtaDescription??DEFAULT_HOME_PAGE.finalCtaDescription),finalCtaLabel:String(row.finalCtaLabel??DEFAULT_HOME_PAGE.finalCtaLabel),finalCtaHref:String(row.finalCtaHref??DEFAULT_HOME_PAGE.finalCtaHref)}}
-export async function getEditableServices(){
+export async function getEditableServices(options:{fallbackOnUnavailable?:boolean}={}){
   try{
     const records=await prisma.service.findMany({orderBy:{createdAt:"asc"}});
     if(!records.length)return[];
@@ -33,25 +33,25 @@ export async function getEditableServices(){
     const map=new Map(media.map(r=>[r.serviceId,r.imageUrl]));
     return records.map(r=>mapServiceRecord({...r,imageUrl:map.get(r.id)??null}));
   }catch(error){
-    logContentReadFailure("Services",error);
-    return[];
+    if(options.fallbackOnUnavailable){logContentReadFailure("Services",error);return[];}
+    throw error;
   }
 }
 export async function getEditableService(slug:string){const record=await prisma.service.findUnique({where:{slug}});if(!record)return undefined;const media=await prisma.serviceMedia.findUnique({where:{serviceId:record.id},select:{imageUrl:true}});return mapServiceRecord({...record,imageUrl:media?.imageUrl??null})}
-export async function getEditableStartupTools(){
+export async function getEditableStartupTools(options:{fallbackOnUnavailable?:boolean}={}){
   try{
     const records=await prisma.startupTool.findMany({include:{category:true},orderBy:{createdAt:"asc"}});
     return records.map(mapToolRecord);
   }catch(error){
-    logContentReadFailure("Startup tools",error);
-    return[];
+    if(options.fallbackOnUnavailable){logContentReadFailure("Startup tools",error);return[];}
+    throw error;
   }
 }
 export async function getEditableStartupTool(slug:string){const record=await prisma.startupTool.findUnique({where:{slug},include:{category:true}});return record?mapToolRecord(record):undefined}
 export async function getEditableAboutPage(){try{const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "AboutPageContent" WHERE "id"='default' LIMIT 1`;if(!rows.length)return DEFAULT_ABOUT_PAGE;const row=rows[0];return sanitizeAbout({...row,stats:[{label:row.focusLabel,value:row.focusValue},{label:row.approachLabel,value:row.approachValue},{label:row.outputLabel,value:row.outputValue}]})}catch(error){console.error("Unable to load About page content:",error);return DEFAULT_ABOUT_PAGE}}
 export async function getEditableHomePage(){try{const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "HomePageContent" WHERE "id"='default' LIMIT 1`;if(!rows.length)return DEFAULT_HOME_PAGE;return sanitizeHome(rows[0])}catch(error){console.error("Unable to load Home page content:",error);return DEFAULT_HOME_PAGE}}
 function mapTestimonial(row:any):EditableTestimonial{return{id:String(row.id),name:String(row.name??""),role:String(row.role??""),company:String(row.company??""),avatarUrl:String(row.avatarUrl??""),content:String(row.content??""),rating:Math.min(5,Math.max(1,Number(row.rating??5))),isPublished:Boolean(row.isPublished),createdAt:row.createdAt?.toISOString?.()??String(row.createdAt??""),updatedAt:row.updatedAt?.toISOString?.()??String(row.updatedAt??"")}}
-export async function getTestimonials(options:{publishedOnly?:boolean;limit?:number}={}){
+export async function getTestimonials(options:{publishedOnly?:boolean;limit?:number;fallbackOnUnavailable?:boolean}={}){
   try{
     const limit=Math.min(12,Math.max(1,options.limit??6));
     const rows=options.publishedOnly
@@ -59,26 +59,26 @@ export async function getTestimonials(options:{publishedOnly?:boolean;limit?:num
       :await prisma.$queryRaw<any[]>`SELECT * FROM "Testimonial" ORDER BY "createdAt" DESC LIMIT ${limit}`;
     return rows.map(mapTestimonial);
   }catch(error){
-    logContentReadFailure("Testimonials",error);
-    return[];
+    if(options.fallbackOnUnavailable){logContentReadFailure("Testimonials",error);return[];}
+    throw error;
   }
 }
 export async function getTestimonial(id:string){const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "Testimonial" WHERE "id"=${id} LIMIT 1`;return rows.length?mapTestimonial(rows[0]):undefined}
 function mapPricingPlan(row:any):EditablePricingPlan{return{id:String(row.id),name:String(row.name??""),slug:String(row.slug??""),description:String(row.description??""),price:Number(row.price??0),currency:String(row.currency??"BHD"),features:Array.isArray(row.features)?row.features.map(String).filter(Boolean):[],ctaLabel:String(row.ctaLabel??"Get started"),ctaHref:String(row.ctaHref??"/contact"),isPopular:Boolean(row.isPopular),isPublished:Boolean(row.isPublished),sortOrder:Number(row.sortOrder??0),createdAt:row.createdAt?.toISOString?.()??String(row.createdAt??""),updatedAt:row.updatedAt?.toISOString?.()??String(row.updatedAt??"")}}
-export async function getPricingPlans(options:{publishedOnly?:boolean}={}){
+export async function getPricingPlans(options:{publishedOnly?:boolean;fallbackOnUnavailable?:boolean}={}){
   try{
     const rows=options.publishedOnly
       ?await prisma.$queryRaw<any[]>`SELECT * FROM "PricingPlan" WHERE "isPublished"=true ORDER BY "sortOrder" ASC,"createdAt" ASC`
       :await prisma.$queryRaw<any[]>`SELECT * FROM "PricingPlan" ORDER BY "sortOrder" ASC,"createdAt" ASC`;
     return rows.map(mapPricingPlan);
   }catch(error){
-    logContentReadFailure("Pricing plans",error);
-    return[];
+    if(options.fallbackOnUnavailable){logContentReadFailure("Pricing plans",error);return[];}
+    throw error;
   }
 }
 export async function getPricingPlan(id:string){const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "PricingPlan" WHERE "id"=${id} LIMIT 1`;return rows.length?mapPricingPlan(rows[0]):undefined}
 function mapFaq(row:any):EditableFaq{return{id:String(row.id),question:String(row.question??""),answer:String(row.answer??""),category:String(row.category??""),page:String(row.page??"/"),sortOrder:Number(row.sortOrder??0),isPublished:Boolean(row.isPublished),createdAt:row.createdAt?.toISOString?.()??String(row.createdAt??""),updatedAt:row.updatedAt?.toISOString?.()??String(row.updatedAt??"")}}
-export async function getFaqs(options:{publishedOnly?:boolean;page?:string;limit?:number}={}){
+export async function getFaqs(options:{publishedOnly?:boolean;page?:string;limit?:number;fallbackOnUnavailable?:boolean}={}){
   try{
     const limit=Math.min(100,Math.max(1,options.limit??20));
     const page=options.page??"/";
@@ -87,8 +87,8 @@ export async function getFaqs(options:{publishedOnly?:boolean;page?:string;limit
       :await prisma.$queryRaw<any[]>`SELECT * FROM "FAQ" ORDER BY "page" ASC,"sortOrder" ASC,"createdAt" ASC LIMIT ${limit}`;
     return rows.map(mapFaq);
   }catch(error){
-    logContentReadFailure("FAQs",error);
-    return[];
+    if(options.fallbackOnUnavailable){logContentReadFailure("FAQs",error);return[];}
+    throw error;
   }
 }
 export async function getFaq(id:string){const rows=await prisma.$queryRaw<any[]>`SELECT * FROM "FAQ" WHERE "id"=${id} LIMIT 1`;return rows.length?mapFaq(rows[0]):undefined}
