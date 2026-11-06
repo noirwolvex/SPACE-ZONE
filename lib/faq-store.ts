@@ -10,7 +10,7 @@ export type PublishedFaq = {
   isPublished: boolean;
 };
 
-export async function getAllPublishedFaqs(limit = 100): Promise<PublishedFaq[]> {
+export async function getAllPublishedFaqs(limit = 100, fallbackOnUnavailable = false): Promise<PublishedFaq[]> {
   const safeLimit = Math.min(100, Math.max(1, Math.round(limit)));
 
   try {
@@ -32,8 +32,11 @@ export async function getAllPublishedFaqs(limit = 100): Promise<PublishedFaq[]> 
       isPublished: Boolean(row.isPublished),
     }));
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[SpaceZone] FAQs could not be loaded; hiding the FAQ section for this request. ${message}`);
-    return [];
+    if (fallbackOnUnavailable) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[SpaceZone] FAQs could not be loaded; hiding the FAQ section for this request. ${message}`);
+      return [];
+    }
+    throw error;
   }
 }
