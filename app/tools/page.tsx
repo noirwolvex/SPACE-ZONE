@@ -6,7 +6,7 @@ import { getEditableStartupTools } from "@/lib/content-store";
 export const dynamic = "force-dynamic";
 
 export default async function ToolsPage() {
-  const tools = await getEditableStartupTools();
+  const tools = await getEditableStartupTools({fallbackOnUnavailable:true});
 
   return (
     <main className="flex-1 flex flex-col pt-24 pb-16 bg-slate-50 dark:bg-[#050505] min-h-[90vh] transition-colors">

@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && next dev",
+    "db:check": "tsx scripts/check-db-connection.ts",
     "build": "prisma generate && next build",
     "start": "next start",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "lint": "eslint",
     "typecheck": "prisma generate && tsc --noEmit",
-    "test": "tsx scripts/test-security.mts"
+    "test": "tsx scripts/test-security.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.2",

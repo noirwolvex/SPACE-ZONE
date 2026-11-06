@@ -1,17 +1,35 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
+type SitemapRecord = { slug: string; updatedAt: Date };
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
-  const [services, tools, blogs, portfolio] = await Promise.all([
-    prisma.service.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.startupTool.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.blogPost.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.portfolioProject.findMany({ select: { slug: true, updatedAt: true } }),
-  ]);
+  let services: SitemapRecord[] = [];
+  let tools: SitemapRecord[] = [];
+  let blogs: SitemapRecord[] = [];
+  let portfolio: SitemapRecord[] = [];
+
+  try {
+    [services, tools, blogs, portfolio] = await Promise.all([
+      prisma.service.findMany({ select: { slug: true, updatedAt: true } }),
+      prisma.startupTool.findMany({ select: { slug: true, updatedAt: true } }),
+      prisma.blogPost.findMany({ select: { slug: true, updatedAt: true } }),
+      prisma.portfolioProject.findMany({ select: { slug: true, updatedAt: true } }),
+    ]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[SpaceZone] Dynamic sitemap records could not be loaded; returning static routes only. ${message}`);
+  }
 
   const staticRoutes = ["/", "/about", "/services", "/portfolio", "/tools", "/blog", "/contact", "/websites", "/books"];
-  const entries: MetadataRoute.Sitemap = staticRoutes.map((path) => ({ url: `${baseUrl}${path}`, changeFrequency: "weekly", priority: path === "/" ? 1 : 0.7 }));
+  const entries: MetadataRoute.Sitemap = staticRoutes.map((path) => ({
+    url: `${baseUrl}${path}`,
+    changeFrequency: "weekly",
+    priority: path === "/" ? 1 : 0.7,
+  }));
 
   return [
     ...entries,

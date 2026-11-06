@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Inbox, Loader2, MessageSquare, ExternalLink, Building2, BriefcaseBusiness, WalletCards, Clock3, Phone } from "lucide-react";
+import { ArrowLeft, Inbox, Loader2, MessageSquare, ExternalLink, Building2, BriefcaseBusiness, WalletCards, Clock3, Phone, type LucideIcon } from "lucide-react";
 
 type ContactMessage = {
   id: string;
@@ -89,7 +89,7 @@ export default function AdminMessages() {
                     <p className="mt-2 text-xs uppercase tracking-widest text-slate-400">{new Date(msg.createdAt).toLocaleString()}</p>
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      {[[Building2, "Company", msg.company], [BriefcaseBusiness, "Service", msg.service], [WalletCards, "Budget", msg.budget], [Clock3, "Timeline", msg.timeline]].map(([Icon, label, value]) => value ? (
+                      {([ { icon: Building2, label: "Company", value: msg.company }, { icon: BriefcaseBusiness, label: "Service", value: msg.service }, { icon: WalletCards, label: "Budget", value: msg.budget }, { icon: Clock3, label: "Timeline", value: msg.timeline } ] satisfies Array<{ icon: LucideIcon; label: string; value: string | null | undefined }>).map(({ icon: Icon, label, value }) => value ? (
                         <div key={String(label)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
                           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400"><Icon className="h-3.5 w-3.5" />{label}</div>
                           <p className="mt-2 text-sm font-bold text-slate-800 dark:text-slate-100">{String(value)}</p>
