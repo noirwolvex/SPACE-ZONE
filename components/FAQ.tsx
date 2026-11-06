@@ -11,7 +11,7 @@ export default async function FAQ({ page, limit = 100 }: FAQProps) {
   const normalizedPage = page?.trim();
   const items = normalizedPage
     ? await getFaqs({ publishedOnly: true, page: normalizedPage, limit, fallbackOnUnavailable: true })
-    : await getAllPublishedFaqs(limit);
+    : await getAllPublishedFaqs(limit, true);
 
   if (!items.length) return null;
 
