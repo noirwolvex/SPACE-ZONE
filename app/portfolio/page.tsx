@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, Layers3, Megaphone, Printer, Store, Target, Clock3, Wrench } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 type Metric = { label: string; value: string };
 
@@ -27,25 +27,31 @@ type DisplayProject = {
 };
 
 async function getSelectedWork(): Promise<DisplayProject[]> {
-  const records = await prisma.portfolioProject.findMany({ orderBy: { createdAt: "desc" } });
-  return records.map((record) => ({
-    id: record.id,
-    title: record.title,
-    slug: record.slug,
-    summary: record.summary,
-    outcome: record.outcome ?? "",
-    challenge: record.challenge ?? "",
-    solution: record.solution ?? "",
-    process: record.process ?? [],
-    techStack: record.techStack ?? [],
-    industry: record.industry ?? "",
-    duration: record.duration ?? "",
-    gallery: Array.from(new Set((record.gallery ?? []).filter(Boolean))),
-    tags: record.tags ?? [],
-    services: record.services?.length ? record.services : record.tags ?? [],
-    metrics: Array.isArray(record.metrics) ? (record.metrics as Metric[]).filter((metric) => metric?.label && metric?.value) : [],
-    gradient: record.gradient,
-  }));
+  try {
+    const records = await prisma.portfolioProject.findMany({ orderBy: { createdAt: "desc" } });
+    return records.map((record) => ({
+      id: record.id,
+      title: record.title,
+      slug: record.slug,
+      summary: record.summary,
+      outcome: record.outcome ?? "",
+      challenge: record.challenge ?? "",
+      solution: record.solution ?? "",
+      process: record.process ?? [],
+      techStack: record.techStack ?? [],
+      industry: record.industry ?? "",
+      duration: record.duration ?? "",
+      gallery: Array.from(new Set((record.gallery ?? []).filter(Boolean))),
+      tags: record.tags ?? [],
+      services: record.services?.length ? record.services : record.tags ?? [],
+      metrics: Array.isArray(record.metrics) ? (record.metrics as Metric[]).filter((metric) => metric?.label && metric?.value) : [],
+      gradient: record.gradient,
+    }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[SpaceZone] Portfolio projects could not be loaded; showing the empty portfolio state. ${message}`);
+    return [];
+  }
 }
 
 const portfolioCapabilities = ["Printing materials", "Store banners", "Brand identity", "Social media content", "SEO campaigns", "Web launch pages"];
