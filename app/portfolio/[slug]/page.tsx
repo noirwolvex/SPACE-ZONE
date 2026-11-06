@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock3, Layers3, Target, Wrench } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock3, Layers3, Target, Wrench, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 60;
@@ -19,13 +19,19 @@ export default async function PortfolioDetailPage({ params }: Props) {
   const gallery = Array.from(new Set(project.gallery.filter(Boolean)));
   const metrics = Array.isArray(project.metrics) ? (project.metrics as Metric[]).filter((metric) => metric?.label && metric?.value) : [];
   const services = project.services.length ? project.services : project.tags;
+  const detailItems: Array<{ label: string; value: string | null; Icon: LucideIcon }> = [
+    { label: "Industry", value: project.industry, Icon: Target },
+    { label: "Duration", value: project.duration, Icon: Clock3 },
+    { label: "Services", value: services.slice(0, 2).join(" · "), Icon: Layers3 },
+    { label: "Tools", value: project.techStack.slice(0, 2).join(" · "), Icon: Wrench },
+  ];
 
   return <main className="flex-1 bg-slate-50 pt-24 pb-16 text-slate-900 dark:bg-[#050505] dark:text-white"><div className="container mx-auto max-w-6xl px-4">
     <Link href="/portfolio" className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200"><ArrowLeft className="h-4 w-4"/>Back to portfolio</Link>
     <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/50">
       <div className={`relative overflow-hidden bg-gradient-to-br ${project.gradient} p-4 sm:p-6 lg:p-8`}>{gallery[0]?<div className="relative aspect-[16/8] overflow-hidden rounded-[24px]"><Image src={gallery[0]} alt={project.title} fill priority sizes="100vw" className="object-cover"/></div>:<div className="h-72 rounded-[24px]"/>}</div>
       <div className="p-6 sm:p-8 lg:p-12"><div className="max-w-4xl"><p className="text-xs font-bold uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-300">{project.industry||project.tags[0]||"Case Study"}</p><h1 className="mt-3 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white md:text-6xl">{project.title}</h1><p className="mt-6 text-xl leading-9 text-slate-600 dark:text-slate-300">{project.summary}</p></div>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["Industry",project.industry,Target],["Duration",project.duration,Clock3],["Services",services.slice(0,2).join(" · "),Layers3],["Tools",project.techStack.slice(0,2).join(" · "),Wrench]].map(([label,value,Icon])=>value?<div key={String(label)} className="min-h-[132px] rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-indigo-500/20 dark:bg-slate-950/40"><Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-300"/><p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p><p className="mt-2 break-words font-semibold leading-6">{String(value)}</p></div>:null)}</div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{detailItems.map(({ label, value, Icon }) => value ? <div key={String(label)} className="min-h-[132px] rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-indigo-500/20 dark:bg-slate-950/40"><Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-300"/><p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p><p className="mt-2 break-words font-semibold leading-6">{String(value)}</p></div>:null)}</div>
         {metrics.length?<div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">{metrics.map(m=><div key={`${m.label}-${m.value}`} className="min-h-[110px] rounded-2xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/20 dark:bg-indigo-950/30"><p className="break-words text-xs font-semibold text-indigo-700 dark:text-indigo-300">{m.label}</p><p className="mt-2 break-words text-2xl font-extrabold text-slate-950 dark:text-white">{m.value}</p></div>)}</div>:null}
       </div>
     </section>
