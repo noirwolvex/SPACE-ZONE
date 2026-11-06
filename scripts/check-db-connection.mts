@@ -37,7 +37,8 @@ async function main() {
   console.info(`  host: ${target.hostname}`);
   console.info(`  port: ${target.port || "(default)"}`);
   console.info(`  user: ${decodeURIComponent(target.username)}`);
-  console.info(`  database: ${decodeURIComponent(target.pathname.replace(/^\\//, ""))}`);
+  const database = target.pathname.startsWith("/") ? target.pathname.slice(1) : target.pathname;
+  console.info(`  database: ${decodeURIComponent(database)}`);
 
   try {
     await prisma.$queryRaw<Array<{ result: number }>>`SELECT 1 AS result`;
