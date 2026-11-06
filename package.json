@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && next dev",
-    "db:check": "tsx scripts/check-db-connection.mts",
+    "db:check": "tsx scripts/check-db-connection.ts",
     "build": "prisma generate && next build",
     "start": "next start",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
