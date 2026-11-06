@@ -1,5 +1,5 @@
 import { loadEnvConfig } from "@next/env";
-import { prisma } from "../lib/prisma";
+import { Pool } from "pg";
 
 // Load the same local environment files used by Next.js (including .env.local).
 loadEnvConfig(process.cwd(), true);
@@ -40,8 +40,19 @@ async function main() {
   const database = target.pathname.startsWith("/") ? target.pathname.slice(1) : target.pathname;
   console.info(`  database: ${decodeURIComponent(database)}`);
 
+  const pool = new Pool({
+    connectionString,
+    max: 1,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000,
+    ssl: { rejectUnauthorized: false },
+  });
+
   try {
-    await prisma.$queryRaw<Array<{ result: number }>>`SELECT 1 AS result`;
+    const result = await pool.query<{ result: number }>("SELECT 1 AS result");
+    if (result.rows[0]?.result !== 1) {
+      throw new Error("PostgreSQL returned an unexpected diagnostic result.");
+    }
     console.info("Database connection: OK");
   } catch (error) {
     const message = getRootErrorMessage(error);
@@ -49,7 +60,7 @@ async function main() {
     console.error(message);
     process.exitCode = 1;
   } finally {
-    await prisma.$disconnect();
+    await pool.end();
   }
 }
 
