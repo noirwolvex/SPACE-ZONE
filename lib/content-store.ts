@@ -55,8 +55,8 @@ export async function getTestimonials(options:{publishedOnly?:boolean;limit?:num
   try{
     const limit=Math.min(12,Math.max(1,options.limit??6));
     const rows=options.publishedOnly
-      ?await prisma.$queryRaw<any[]>\`SELECT * FROM "Testimonial" WHERE "isPublished"=true ORDER BY "createdAt" DESC LIMIT \${limit}\`
-      :await prisma.$queryRaw<any[]>\`SELECT * FROM "Testimonial" ORDER BY "createdAt" DESC LIMIT \${limit}\`;
+      ?await prisma.$queryRaw<any[]>`SELECT * FROM "Testimonial" WHERE "isPublished"=true ORDER BY "createdAt" DESC LIMIT ${limit}`
+      :await prisma.$queryRaw<any[]>`SELECT * FROM "Testimonial" ORDER BY "createdAt" DESC LIMIT ${limit}`;
     return rows.map(mapTestimonial);
   }catch(error){
     logContentReadFailure("Testimonials",error);
@@ -68,8 +68,8 @@ function mapPricingPlan(row:any):EditablePricingPlan{return{id:String(row.id),na
 export async function getPricingPlans(options:{publishedOnly?:boolean}={}){
   try{
     const rows=options.publishedOnly
-      ?await prisma.$queryRaw<any[]>\`SELECT * FROM "PricingPlan" WHERE "isPublished"=true ORDER BY "sortOrder" ASC,"createdAt" ASC\`
-      :await prisma.$queryRaw<any[]>\`SELECT * FROM "PricingPlan" ORDER BY "sortOrder" ASC,"createdAt" ASC\`;
+      ?await prisma.$queryRaw<any[]>`SELECT * FROM "PricingPlan" WHERE "isPublished"=true ORDER BY "sortOrder" ASC,"createdAt" ASC`
+      :await prisma.$queryRaw<any[]>`SELECT * FROM "PricingPlan" ORDER BY "sortOrder" ASC,"createdAt" ASC`;
     return rows.map(mapPricingPlan);
   }catch(error){
     logContentReadFailure("Pricing plans",error);
@@ -83,8 +83,8 @@ export async function getFaqs(options:{publishedOnly?:boolean;page?:string;limit
     const limit=Math.min(100,Math.max(1,options.limit??20));
     const page=options.page??"/";
     const rows=options.publishedOnly
-      ?await prisma.$queryRaw<any[]>\`SELECT * FROM "FAQ" WHERE "isPublished"=true AND "page"=\${page} ORDER BY "sortOrder" ASC,"createdAt" ASC LIMIT \${limit}\`
-      :await prisma.$queryRaw<any[]>\`SELECT * FROM "FAQ" ORDER BY "page" ASC,"sortOrder" ASC,"createdAt" ASC LIMIT \${limit}\`;
+      ?await prisma.$queryRaw<any[]>`SELECT * FROM "FAQ" WHERE "isPublished"=true AND "page"=${page} ORDER BY "sortOrder" ASC,"createdAt" ASC LIMIT ${limit}`
+      :await prisma.$queryRaw<any[]>`SELECT * FROM "FAQ" ORDER BY "page" ASC,"sortOrder" ASC,"createdAt" ASC LIMIT ${limit}`;
     return rows.map(mapFaq);
   }catch(error){
     logContentReadFailure("FAQs",error);
