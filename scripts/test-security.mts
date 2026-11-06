@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { safeRedirectPath } from "../lib/redirect";
+import redirectModule from "../lib/redirect";
+
+const { safeRedirectPath } = redirectModule;
 
 const cases = [
   ["/dashboard", "/dashboard"],
